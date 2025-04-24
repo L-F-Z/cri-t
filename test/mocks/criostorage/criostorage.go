@@ -240,18 +240,18 @@ func (mr *MockRuntimeServerMockRecorder) CreateContainer(systemContext, podName,
 }
 
 // CreatePodSandbox mocks base method.
-func (m *MockRuntimeServer) CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage storage0.RegistryImageReference, imageAuthFile, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (storage0.ContainerInfo, error) {
+func (m *MockRuntimeServer) CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage storage0.RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (storage0.ContainerInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePodSandbox", systemContext, podName, podID, pauseImage, imageAuthFile, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged)
+	ret := m.ctrl.Call(m, "CreatePodSandbox", systemContext, podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged)
 	ret0, _ := ret[0].(storage0.ContainerInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreatePodSandbox indicates an expected call of CreatePodSandbox.
-func (mr *MockRuntimeServerMockRecorder) CreatePodSandbox(systemContext, podName, podID, pauseImage, imageAuthFile, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged any) *gomock.Call {
+func (mr *MockRuntimeServerMockRecorder) CreatePodSandbox(systemContext, podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodSandbox", reflect.TypeOf((*MockRuntimeServer)(nil).CreatePodSandbox), systemContext, podName, podID, pauseImage, imageAuthFile, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodSandbox", reflect.TypeOf((*MockRuntimeServer)(nil).CreatePodSandbox), systemContext, podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged)
 }
 
 // DeleteContainer mocks base method.

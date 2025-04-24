@@ -66,7 +66,7 @@ type RuntimeServer interface {
 	// with the pod's infrastructure container having the same value for
 	// both its pod's ID and its container ID.
 	// Pointer arguments can be nil.  All other arguments are required.
-	CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage RegistryImageReference, imageAuthFile, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error)
+	CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error)
 
 	// GetContainerMetadata returns the metadata we've stored for a container.
 	GetContainerMetadata(idOrName string) (RuntimeContainerMetadata, error)
@@ -298,7 +298,7 @@ func (r *runtimeService) createContainerOrPodSandbox(systemContext *types.System
 	}, nil
 }
 
-func (r *runtimeService) CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage RegistryImageReference, imageAuthFile, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error) {
+func (r *runtimeService) CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error) {
 	// Check if we have the specified image.
 	var ref types.ImageReference
 	ref, err := istorage.Transport.NewStoreReference(r.storageImageServer.GetStore(), pauseImage.Raw(), "")
@@ -314,9 +314,6 @@ func (r *runtimeService) CreatePodSandbox(systemContext *types.SystemContext, po
 		sourceCtx := types.SystemContext{}
 		if systemContext != nil {
 			sourceCtx = *systemContext // A shallow copy
-		}
-		if imageAuthFile != "" {
-			sourceCtx.AuthFilePath = imageAuthFile
 		}
 		pulledRef, err := r.storageImageServer.PullImage(context.Background(), pauseImage, &ImageCopyOptions{
 			SourceCtx:      &sourceCtx,

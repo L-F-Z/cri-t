@@ -131,15 +131,6 @@ func (c *Config) ReloadPauseImage(newConfig *Config) error {
 		c.PauseImage = newConfig.PauseImage
 		logConfig("pause_image", c.PauseImage)
 	}
-	if c.PauseImageAuthFile != newConfig.PauseImageAuthFile {
-		if newConfig.PauseImageAuthFile != "" {
-			if _, err := os.Stat(newConfig.PauseImageAuthFile); err != nil {
-				return err
-			}
-		}
-		c.PauseImageAuthFile = newConfig.PauseImageAuthFile
-		logConfig("pause_image_auth_file", c.PauseImageAuthFile)
-	}
 	if c.PauseCommand != newConfig.PauseCommand {
 		c.PauseCommand = newConfig.PauseCommand
 		logConfig("pause_command", c.PauseCommand)

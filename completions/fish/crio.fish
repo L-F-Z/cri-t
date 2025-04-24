@@ -61,7 +61,6 @@ complete -c crio -n '__fish_crio_no_subcommand' -f -l enable-pod-events -d 'If t
 complete -c crio -n '__fish_crio_no_subcommand' -f -l enable-profile-unix-socket -d 'Enable pprof profiler on crio unix domain socket.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l enable-tracing -d 'Enable OpenTelemetry trace data exporting.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l gid-mappings -r -d 'Specify the GID mappings to use for the user namespace. This option is deprecated, and will be replaced with Kubernetes user namespace (KEP-127) support in the future.'
-complete -c crio -n '__fish_crio_no_subcommand' -l global-auth-file -r -d 'Path to a file like /var/lib/kubelet/config.json holding credentials necessary for pulling images from secure registries.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l grpc-max-recv-msg-size -r -d 'Maximum grpc receive message size in bytes.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l grpc-max-send-msg-size -r -d 'Maximum grpc receive message size.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l hooks-dir -r -d 'Set the OCI hooks directory path (may be set multiple times)
@@ -133,7 +132,6 @@ complete -c crio -n '__fish_crio_no_subcommand' -f -l nri-plugin-registration-ti
 complete -c crio -n '__fish_crio_no_subcommand' -f -l nri-plugin-request-timeout -r -d 'Timeout for a plugin to handle an NRI request.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l pause-command -r -d 'Path to the pause executable in the pause image.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l pause-image -r -d 'Image which contains the pause executable.'
-complete -c crio -n '__fish_crio_no_subcommand' -l pause-image-auth-file -r -d 'Path to a config file containing credentials for --pause-image.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l pids-limit -r -d 'Maximum number of processes allowed in a container. This option is deprecated. The Kubelet flag \'--pod-pids-limit\' should be used instead.'
 complete -c crio -n '__fish_crio_no_subcommand' -f -l pinned-images -r -d 'A list of images that will be excluded from the kubelet\'s garbage collection.'
 complete -c crio -n '__fish_crio_no_subcommand' -l pinns-path -r -d 'The path to find the pinns binary, which is needed to manage namespace lifecycle. Will be searched for in $PATH if empty.'

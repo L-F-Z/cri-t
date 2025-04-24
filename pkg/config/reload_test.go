@@ -211,31 +211,6 @@ var _ = t.Describe("Config", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(sut.PauseCommand).To(Equal(newPauseCommand))
 		})
-
-		It("should succeed with pause_image_auth_file change", func() {
-			// Given
-			newConfig := defaultConfig()
-			newConfig.PauseImageAuthFile = validFilePath
-
-			// When
-			err := sut.ReloadPauseImage(newConfig)
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-			Expect(sut.PauseImageAuthFile).To(Equal(validFilePath))
-		})
-
-		It("should fail with invalid pause_image_auth_file", func() {
-			// Given
-			newConfig := defaultConfig()
-			newConfig.PauseImageAuthFile = invalidPath
-
-			// When
-			err := sut.ReloadPauseImage(newConfig)
-
-			// Then
-			Expect(err).To(HaveOccurred())
-		})
 	})
 
 	t.Describe("ReloadRegistries", func() {

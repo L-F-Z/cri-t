@@ -33,7 +33,7 @@ var _ = t.Describe("RunPodSandbox", func() {
 
 			// Given
 			gomock.InOrder(
-				runtimeServerMock.EXPECT().CreatePodSandbox(gomock.Any(),
+				runtimeServerMock.EXPECT().CreatePodSandbox(
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
@@ -114,7 +114,7 @@ var _ = t.Describe("RunPodSandbox", func() {
 		It("should fail with relative log path", func() {
 			// Given
 			gomock.InOrder(
-				runtimeServerMock.EXPECT().CreatePodSandbox(gomock.Any(),
+				runtimeServerMock.EXPECT().CreatePodSandbox(
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 					gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).

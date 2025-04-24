@@ -78,12 +78,6 @@ func mergeConfig(config *libconfig.Config, ctx *cli.Context) error {
 	if ctx.IsSet("pause-image") {
 		config.PauseImage = ctx.String("pause-image")
 	}
-	if ctx.IsSet("pause-image-auth-file") {
-		config.PauseImageAuthFile = ctx.String("pause-image-auth-file")
-	}
-	if ctx.IsSet("global-auth-file") {
-		config.GlobalAuthFile = ctx.String("global-auth-file")
-	}
 	if ctx.IsSet("root") {
 		config.Root = ctx.String("root")
 	}
@@ -558,21 +552,9 @@ func getCrioFlags(defConf *libconfig.Config) []cli.Flag {
 			EnvVars: []string{"CONTAINER_PAUSE_IMAGE"},
 		},
 		&cli.StringFlag{
-			Name:      "pause-image-auth-file",
-			Usage:     "Path to a config file containing credentials for --pause-image.",
-			EnvVars:   []string{"CONTAINER_PAUSE_IMAGE_AUTH_FILE"},
-			TakesFile: true,
-		},
-		&cli.StringFlag{
 			Name:    "separate-pull-cgroup",
 			Usage:   "[EXPERIMENTAL] Pull in new cgroup.",
 			EnvVars: []string{"PULL_IN_A_CGROUP"},
-		},
-		&cli.StringFlag{
-			Name:      "global-auth-file",
-			Usage:     "Path to a file like /var/lib/kubelet/config.json holding credentials necessary for pulling images from secure registries.",
-			EnvVars:   []string{"CONTAINER_GLOBAL_AUTH_FILE"},
-			TakesFile: true,
 		},
 		&cli.StringFlag{
 			Name:      "root",

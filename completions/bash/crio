@@ -58,7 +58,6 @@ h
 --enable-profile-unix-socket
 --enable-tracing
 --gid-mappings
---global-auth-file
 --grpc-max-recv-msg-size
 --grpc-max-send-msg-size
 --hooks-dir
@@ -98,7 +97,6 @@ h
 --nri-plugin-request-timeout
 --pause-command
 --pause-image
---pause-image-auth-file
 --pids-limit
 --pinned-images
 --pinns-path

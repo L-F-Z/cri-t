@@ -54,7 +54,6 @@ crio
 [--enable-profile-unix-socket]
 [--enable-tracing]
 [--gid-mappings]=[value]
-[--global-auth-file]=[value]
 [--grpc-max-recv-msg-size]=[value]
 [--grpc-max-send-msg-size]=[value]
 [--help|-h]
@@ -94,7 +93,6 @@ crio
 [--nri-plugin-registration-timeout]=[value]
 [--nri-plugin-request-timeout]=[value]
 [--pause-command]=[value]
-[--pause-image-auth-file]=[value]
 [--pause-image]=[value]
 [--pids-limit]=[value]
 [--pinned-images]=[value]
@@ -251,8 +249,6 @@ crio [GLOBAL OPTIONS] command [COMMAND OPTIONS] [ARGUMENTS...]
 
 **--gid-mappings**="": Specify the GID mappings to use for the user namespace. This option is deprecated, and will be replaced with Kubernetes user namespace (KEP-127) support in the future.
 
-**--global-auth-file**="": Path to a file like /var/lib/kubelet/config.json holding credentials necessary for pulling images from secure registries.
-
 **--grpc-max-recv-msg-size**="": Maximum grpc receive message size in bytes. (default: 83886080)
 
 **--grpc-max-send-msg-size**="": Maximum grpc receive message size. (default: 83886080)
@@ -364,8 +360,6 @@ crio [GLOBAL OPTIONS] command [COMMAND OPTIONS] [ARGUMENTS...]
 **--pause-command**="": Path to the pause executable in the pause image. (default: "/pause")
 
 **--pause-image**="": Image which contains the pause executable. (default: "registry.k8s.io/pause:3.10")
-
-**--pause-image-auth-file**="": Path to a config file containing credentials for --pause-image.
 
 **--pids-limit**="": Maximum number of processes allowed in a container. This option is deprecated. The Kubelet flag '--pod-pids-limit' should be used instead. (default: -1)
 

@@ -48,22 +48,6 @@ var _ = t.Describe("ImagePull", func() {
 			Expect(response).NotTo(BeNil())
 		})
 
-		It("should fail credential decode errors", func() {
-			// Given
-			// When
-			response, err := sut.PullImage(context.Background(),
-				&types.PullImageRequest{
-					Image: &types.ImageSpec{Image: "id"},
-					Auth: &types.AuthConfig{
-						Auth: "❤️",
-					},
-				})
-
-			// Then
-			Expect(err).To(HaveOccurred())
-			Expect(response).To(BeNil())
-		})
-
 		It("should fail when image pull errors", func() {
 			// Given
 			gomock.InOrder(

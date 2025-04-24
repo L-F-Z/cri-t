@@ -535,7 +535,7 @@ var _ = t.Describe("Runtime", func() {
 
 				// When
 				info, err = sut.CreatePodSandbox(&types.SystemContext{},
-					"podName", "podID", pauseImage, "",
+					"podName", "podID", pauseImage,
 					"containerName", "metadataName",
 					"uid", "namespace", 0, nil, []string{"mountLabel"}, false,
 				)
@@ -671,7 +671,7 @@ var _ = t.Describe("Runtime", func() {
 
 			// When
 			_, err = sut.CreatePodSandbox(&types.SystemContext{},
-				"podName", "podID", pauseImage, "",
+				"podName", "podID", pauseImage,
 				"containerName", "metadataName",
 				"uid", "namespace", 0, nil, []string{"mountLabel"}, false,
 			)
@@ -693,7 +693,7 @@ var _ = t.Describe("Runtime", func() {
 
 			// When
 			_, err = sut.CreatePodSandbox(&types.SystemContext{},
-				"podName", "podID", pauseImage, "",
+				"podName", "podID", pauseImage,
 				"containerName", "metadataName",
 				"uid", "namespace", 0, nil, []string{"mountLabel"}, false,
 			)
@@ -796,26 +796,7 @@ var _ = t.Describe("Runtime", func() {
 
 			// When
 			info, err = sut.CreatePodSandbox(&types.SystemContext{},
-				"podName", "podID", pauseImage, "",
-				"containerName", "metadataName",
-				"uid", "namespace", 0, nil, []string{"mountLabel"}, false,
-			)
-		})
-
-		It("should pull pauseImage if not available locally, using provided credential file", func() {
-			// The system under test
-			sut := storage.GetRuntimeService(context.Background(), imageServerMock, storageTransportMock)
-			Expect(sut).NotTo(BeNil())
-
-			// Given
-			mockCreatePodSandboxExpectingCopyOptions(&storage.ImageCopyOptions{
-				SourceCtx:      &types.SystemContext{AuthFilePath: "/var/non-default/credentials.json"},
-				DestinationCtx: &types.SystemContext{},
-			})
-
-			// When
-			info, err = sut.CreatePodSandbox(&types.SystemContext{},
-				"podName", "podID", pauseImage, "/var/non-default/credentials.json",
+				"podName", "podID", pauseImage,
 				"containerName", "metadataName",
 				"uid", "namespace", 0, nil, []string{"mountLabel"}, false,
 			)

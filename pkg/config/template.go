@@ -487,19 +487,9 @@ func initCrioTemplateConfig(c *Config) ([]*templateConfigValue, error) {
 			isDefaultValue: simpleEqual(dc.DefaultTransport, c.DefaultTransport),
 		},
 		{
-			templateString: templateStringCrioImageGlobalAuthFile,
-			group:          crioImageConfig,
-			isDefaultValue: simpleEqual(dc.GlobalAuthFile, c.GlobalAuthFile),
-		},
-		{
 			templateString: templateStringCrioImagePauseImage,
 			group:          crioImageConfig,
 			isDefaultValue: simpleEqual(dc.PauseImage, c.PauseImage),
-		},
-		{
-			templateString: templateStringCrioImagePauseImageAuthFile,
-			group:          crioImageConfig,
-			isDefaultValue: simpleEqual(dc.PauseImageAuthFile, c.PauseImageAuthFile),
 		},
 		{
 			templateString: templateStringCrioImagePauseCommand,
@@ -1393,22 +1383,9 @@ const templateStringCrioImageDefaultTransport = `# Default transport for pulling
 
 `
 
-const templateStringCrioImageGlobalAuthFile = `# The path to a file containing credentials necessary for pulling images from
-# secure registries. The file is similar to that of /var/lib/kubelet/config.json
-{{ $.Comment }}global_auth_file = "{{ .GlobalAuthFile }}"
-
-`
-
 const templateStringCrioImagePauseImage = `# The image used to instantiate infra containers.
 # This option supports live configuration reload.
 {{ $.Comment }}pause_image = "{{ .PauseImage }}"
-
-`
-
-const templateStringCrioImagePauseImageAuthFile = `# The path to a file containing credentials specific for pulling the pause_image from
-# above. The file is similar to that of /var/lib/kubelet/config.json
-# This option supports live configuration reload.
-{{ $.Comment }}pause_image_auth_file = "{{ .PauseImageAuthFile }}"
 
 `
 

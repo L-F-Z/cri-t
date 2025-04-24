@@ -525,18 +525,10 @@ type ImageConfig struct {
 	// DefaultTransport is a value we prefix to image names that fail to
 	// validate source references.
 	DefaultTransport string `toml:"default_transport"`
-	// GlobalAuthFile is a path to a file like /var/lib/kubelet/config.json
-	// containing credentials necessary for pulling images from secure
-	// registries.
-	GlobalAuthFile string `toml:"global_auth_file"`
 	// PauseImage is the name of an image on a registry which we use to instantiate infra
 	// containers. It should start with a registry host name.
 	// Format is enforced by validation.
 	PauseImage string `toml:"pause_image"`
-	// PauseImageAuthFile, if not empty, is a path to a file like
-	// /var/lib/kubelet/config.json containing credentials necessary
-	// for pulling PauseImage
-	PauseImageAuthFile string `toml:"pause_image_auth_file"`
 	// PauseCommand is the path of the binary we run in an infra
 	// container that's been instantiated using PauseImage.
 	PauseCommand string `toml:"pause_command"`
