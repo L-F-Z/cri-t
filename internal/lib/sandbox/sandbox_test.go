@@ -8,12 +8,12 @@ import (
 	. "github.com/onsi/gomega"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/hostport"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/memorystore"
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/internal/storage"
-	"github.com/cri-o/cri-o/internal/storage/references"
+	"github.com/L-F-Z/cri-t/internal/hostport"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/memorystore"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	"github.com/L-F-Z/cri-t/internal/storage/references"
 )
 
 // The actual test suite.

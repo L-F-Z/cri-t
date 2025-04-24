@@ -14,9 +14,9 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"tags.cncf.io/container-device-interface/pkg/cdi"
 
-	devicecfg "github.com/cri-o/cri-o/internal/config/device"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/utils"
+	devicecfg "github.com/L-F-Z/cri-t/internal/config/device"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/utils"
 )
 
 func (c *container) SpecAddDevices(configuredDevices, annotationDevices []devicecfg.Device, privilegedWithoutHostDevices, enableDeviceOwnershipFromSecurityContext bool) error {

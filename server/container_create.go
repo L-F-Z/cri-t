@@ -18,14 +18,14 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/factory/container"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/internal/resourcestore"
-	"github.com/cri-o/cri-o/internal/storage"
-	"github.com/cri-o/cri-o/pkg/config"
-	"github.com/cri-o/cri-o/utils"
+	"github.com/L-F-Z/cri-t/internal/factory/container"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/resourcestore"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	"github.com/L-F-Z/cri-t/pkg/config"
+	"github.com/L-F-Z/cri-t/utils"
 )
 
 // sync with https://github.com/containers/storage/blob/7fe03f6c765f2adbc75a5691a1fb4f19e56e7071/pkg/truncindex/truncindex.go#L92

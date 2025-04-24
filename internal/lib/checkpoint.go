@@ -15,9 +15,9 @@ import (
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/pkg/annotations"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
 // ContainerCheckpointOptions is the relevant subset of libpod.ContainerCheckpointOptions.

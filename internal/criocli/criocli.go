@@ -11,9 +11,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
-	"github.com/cri-o/cri-o/internal/log"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
-	"github.com/cri-o/cri-o/server/metrics/collectors"
+	"github.com/L-F-Z/cri-t/internal/log"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
+	"github.com/L-F-Z/cri-t/server/metrics/collectors"
 )
 
 // DefaultCommands are the flags commands can be added to every binary.

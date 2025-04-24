@@ -11,12 +11,12 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/factory/container"
-	"github.com/cri-o/cri-o/internal/hostport"
-	"github.com/cri-o/cri-o/internal/memorystore"
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/internal/storage"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/factory/container"
+	"github.com/L-F-Z/cri-t/internal/hostport"
+	"github.com/L-F-Z/cri-t/internal/memorystore"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 )
 
 // Builder is the interface for managing pod sandboxes.

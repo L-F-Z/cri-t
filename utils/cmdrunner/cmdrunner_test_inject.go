@@ -6,7 +6,7 @@
 package cmdrunner
 
 import (
-	runnerMock "github.com/cri-o/cri-o/test/mocks/cmdrunner"
+	runnerMock "github.com/L-F-Z/cri-t/test/mocks/cmdrunner"
 )
 
 func SetMocked(runner *runnerMock.MockCommandRunner) {

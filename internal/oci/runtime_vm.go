@@ -41,13 +41,13 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	utilexec "k8s.io/utils/exec"
 
-	"github.com/cri-o/cri-o/internal/config/cgmgr"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/pkg/annotations"
-	"github.com/cri-o/cri-o/pkg/config"
-	"github.com/cri-o/cri-o/server/metrics"
-	"github.com/cri-o/cri-o/utils"
-	"github.com/cri-o/cri-o/utils/errdefs"
+	"github.com/L-F-Z/cri-t/internal/config/cgmgr"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/pkg/annotations"
+	"github.com/L-F-Z/cri-t/pkg/config"
+	"github.com/L-F-Z/cri-t/server/metrics"
+	"github.com/L-F-Z/cri-t/utils"
+	"github.com/L-F-Z/cri-t/utils/errdefs"
 )
 
 // runtimeVM is the Runtime interface implementation that is more appropriate

@@ -11,8 +11,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cri-o/cri-o/internal/dbusmgr"
-	"github.com/cri-o/cri-o/utils"
+	"github.com/L-F-Z/cri-t/internal/dbusmgr"
+	"github.com/L-F-Z/cri-t/utils"
 )
 
 type errorReaderWriter struct{}

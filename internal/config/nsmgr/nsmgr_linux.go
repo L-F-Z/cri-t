@@ -14,8 +14,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 
-	"github.com/cri-o/cri-o/utils"
-	"github.com/cri-o/cri-o/utils/cmdrunner"
+	"github.com/L-F-Z/cri-t/utils"
+	"github.com/L-F-Z/cri-t/utils/cmdrunner"
 )
 
 // NamespaceManager manages the server's namespaces.

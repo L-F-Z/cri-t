@@ -6,7 +6,7 @@ import (
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 
-	"github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
 // Helper function for pointer reference.

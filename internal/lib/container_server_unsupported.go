@@ -3,7 +3,7 @@
 package lib
 
 import (
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
 )
 
 func (c *ContainerServer) addSandboxPlatform(sb *sandbox.Sandbox) error {

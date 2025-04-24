@@ -13,10 +13,10 @@ import (
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 	kclock "k8s.io/utils/clock"
 
-	"github.com/cri-o/cri-o/internal/oci"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
-	runnerMock "github.com/cri-o/cri-o/test/mocks/cmdrunner"
-	"github.com/cri-o/cri-o/utils/cmdrunner"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
+	runnerMock "github.com/L-F-Z/cri-t/test/mocks/cmdrunner"
+	"github.com/L-F-Z/cri-t/utils/cmdrunner"
 )
 
 const (

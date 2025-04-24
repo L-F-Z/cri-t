@@ -11,8 +11,8 @@ import (
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/log"
-	pkgstorage "github.com/cri-o/cri-o/internal/storage"
+	"github.com/L-F-Z/cri-t/internal/log"
+	pkgstorage "github.com/L-F-Z/cri-t/internal/storage"
 )
 
 // ImageStatus returns the status of the image.

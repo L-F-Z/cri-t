@@ -93,7 +93,7 @@ func run() error {
 
 _Generated on %s for commit [%s][0]._
 
-[0]: https://github.com/cri-o/cri-o/commit/%s
+[0]: https://github.com/L-F-Z/cri-t/commit/%s
 
 ## Outdated Dependencies
 

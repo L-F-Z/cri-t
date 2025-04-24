@@ -4,8 +4,8 @@ import (
 	"github.com/vishvananda/netlink"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 func (ss *StatsServer) GenerateNetworkMetrics(sb *sandbox.Sandbox) []*types.Metric {

@@ -8,7 +8,7 @@ import (
 	nri "github.com/containerd/nri/pkg/adaptation"
 	"github.com/sirupsen/logrus"
 
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 // Domain implements the functions the generic NRI interface

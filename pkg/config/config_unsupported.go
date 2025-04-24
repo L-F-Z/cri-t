@@ -2,7 +2,7 @@
 
 package config
 
-import "github.com/cri-o/cri-o/utils/errdefs"
+import "github.com/L-F-Z/cri-t/utils/errdefs"
 
 // Defaults if none are specified
 // This uses the Linux values, just to have something that compiles. They don’t even pass unit tests.

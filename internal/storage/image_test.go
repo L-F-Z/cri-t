@@ -12,12 +12,12 @@ import (
 	digest "github.com/opencontainers/go-digest"
 	"go.uber.org/mock/gomock"
 
-	"github.com/cri-o/cri-o/internal/mockutils"
-	"github.com/cri-o/cri-o/internal/storage"
-	"github.com/cri-o/cri-o/internal/storage/references"
-	"github.com/cri-o/cri-o/pkg/config"
-	containerstoragemock "github.com/cri-o/cri-o/test/mocks/containerstorage"
-	criostoragemock "github.com/cri-o/cri-o/test/mocks/criostorage"
+	"github.com/L-F-Z/cri-t/internal/mockutils"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	"github.com/L-F-Z/cri-t/internal/storage/references"
+	"github.com/L-F-Z/cri-t/pkg/config"
+	containerstoragemock "github.com/L-F-Z/cri-t/test/mocks/containerstorage"
+	criostoragemock "github.com/L-F-Z/cri-t/test/mocks/criostorage"
 )
 
 // The actual test suite.

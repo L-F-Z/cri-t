@@ -9,8 +9,8 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 
-	"github.com/cri-o/cri-o/internal/watchdog"
-	systemdmock "github.com/cri-o/cri-o/test/mocks/systemd"
+	"github.com/L-F-Z/cri-t/internal/watchdog"
+	systemdmock "github.com/L-F-Z/cri-t/test/mocks/systemd"
 )
 
 // The actual test suite.

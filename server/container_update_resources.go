@@ -10,9 +10,9 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/utils/cpuset"
 
-	"github.com/cri-o/cri-o/internal/config/node"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/config/node"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
 )
 
 // UpdateContainerResources updates ContainerConfig of the container.

@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"runtime"
 
-	"github.com/cri-o/cri-o/internal/version"
+	"github.com/L-F-Z/cri-t/internal/version"
 )
 
 // Simplest semver "X.Y.Z" format.

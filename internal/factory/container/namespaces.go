@@ -8,10 +8,10 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/config/nsmgr"
-	"github.com/cri-o/cri-o/internal/lib/namespace"
-	oci "github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
+	"github.com/L-F-Z/cri-t/internal/lib/namespace"
+	oci "github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
 func (c *container) SpecAddNamespaces(sb SandboxIFace, targetCtr *oci.Container, serverConfig *config.Config) error {

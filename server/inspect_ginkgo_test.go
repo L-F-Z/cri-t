@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/opencontainers/runtime-spec/specs-go"
 
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/oci"
 )
 
 var _ = t.Describe("Inspect", func() {

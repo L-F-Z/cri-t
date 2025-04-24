@@ -3,8 +3,8 @@
 package statsserver
 
 import (
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/oci"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 

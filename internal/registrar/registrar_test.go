@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cri-o/cri-o/internal/registrar"
-	. "github.com/cri-o/cri-o/test/framework"
+	"github.com/L-F-Z/cri-t/internal/registrar"
+	. "github.com/L-F-Z/cri-t/test/framework"
 )
 
 // TestRegistrar runs the created specs.

@@ -16,7 +16,7 @@ import (
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
 
-	"github.com/cri-o/cri-o/internal/config/node"
+	"github.com/L-F-Z/cri-t/internal/config/node"
 )
 
 const (

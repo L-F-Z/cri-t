@@ -6,7 +6,7 @@ GO_BUILD ?= $(GO) build $(TRIMPATH)
 GO_RUN ?= $(GO) run
 NIX_IMAGE ?= nixos/nix:2.24.3
 
-PROJECT := github.com/cri-o/cri-o
+PROJECT := github.com/L-F-Z/cri-t
 CRIO_INSTANCE := crio_dev
 PREFIX ?= ${DESTDIR}/usr/local
 BINDIR ?= ${PREFIX}/bin
@@ -479,28 +479,28 @@ mock-cmdrunner: ${MOCKGEN}
 	${MOCKGEN} \
 		-package cmdrunnermock \
 		-destination ${MOCK_PATH}/cmdrunner/cmdrunner.go \
-		github.com/cri-o/cri-o/utils/cmdrunner CommandRunner
+		github.com/L-F-Z/cri-t/utils/cmdrunner CommandRunner
 
 .PHONY: mock-criostorage
 mock-criostorage: ${MOCKGEN}
 	${MOCKGEN} \
 		-package criostoragemock \
 		-destination ${MOCK_PATH}/criostorage/criostorage.go \
-		github.com/cri-o/cri-o/internal/storage ImageServer,RuntimeServer,StorageTransport
+		github.com/L-F-Z/cri-t/internal/storage ImageServer,RuntimeServer,StorageTransport
 
 .PHONY: mock-lib-config
 mock-lib-config: ${MOCKGEN}
 	${MOCKGEN} \
 		-package libconfigmock \
 		-destination ${MOCK_PATH}/lib/lib.go \
-		github.com/cri-o/cri-o/pkg/config Iface
+		github.com/L-F-Z/cri-t/pkg/config Iface
 
 .PHONY: mock-oci
 mock-oci: ${MOCKGEN}
 	${MOCKGEN} \
 		-package ocimock \
 		-destination ${MOCK_PATH}/oci/oci.go \
-		github.com/cri-o/cri-o/internal/oci RuntimeImpl
+		github.com/L-F-Z/cri-t/internal/oci RuntimeImpl
 
 .PHONY: mock-image-types
 mock-image-types: ${MOCKGEN}
@@ -521,7 +521,7 @@ mock-systemd: ${MOCKGEN}
 	${MOCKGEN} \
 		-package systemdmock \
 		-destination ${MOCK_PATH}/systemd/systemd.go \
-		github.com/cri-o/cri-o/internal/watchdog Systemd
+		github.com/L-F-Z/cri-t/internal/watchdog Systemd
 
 docs/%.5: docs/%.5.md ${GO_MD2MAN}
 	(${GO_MD2MAN} -in $< -out $@.tmp && touch $@.tmp && mv $@.tmp $@) || \

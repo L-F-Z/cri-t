@@ -6,7 +6,7 @@
 package sandbox
 
 import (
-	"github.com/cri-o/cri-o/internal/hostport"
+	"github.com/L-F-Z/cri-t/internal/hostport"
 )
 
 // SetPortMappings sets the PortMappings for the Sandbox.

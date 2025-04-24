@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cri-o/cri-o/internal/log"
-	crioann "github.com/cri-o/cri-o/pkg/annotations"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/log"
+	crioann "github.com/L-F-Z/cri-t/pkg/annotations"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 )
 
 // GetRuntimeHandlerHooks returns RuntimeHandlerHooks implementation by the runtime handler name.

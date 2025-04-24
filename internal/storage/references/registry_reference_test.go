@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cri-o/cri-o/internal/storage/references"
+	"github.com/L-F-Z/cri-t/internal/storage/references"
 )
 
 var _ = t.Describe("RegistryImageReference", func() {

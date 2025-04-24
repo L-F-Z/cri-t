@@ -10,7 +10,7 @@ import (
 
 	cri "k8s.io/cri-client/pkg"
 
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 var (

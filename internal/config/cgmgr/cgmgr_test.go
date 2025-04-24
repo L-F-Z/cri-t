@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cri-o/cri-o/internal/config/cgmgr"
+	"github.com/L-F-Z/cri-t/internal/config/cgmgr"
 )
 
 const (

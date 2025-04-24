@@ -9,12 +9,12 @@ import (
 	"go.uber.org/mock/gomock"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/internal/storage"
-	"github.com/cri-o/cri-o/internal/storage/references"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
-	. "github.com/cri-o/cri-o/test/framework"
-	containerstoragemock "github.com/cri-o/cri-o/test/mocks/containerstorage"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	"github.com/L-F-Z/cri-t/internal/storage/references"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
+	. "github.com/L-F-Z/cri-t/test/framework"
+	containerstoragemock "github.com/L-F-Z/cri-t/test/mocks/containerstorage"
 )
 
 // TestOci runs the created specs.

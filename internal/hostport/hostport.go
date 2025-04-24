@@ -23,7 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 
-	utiliptables "github.com/cri-o/cri-o/internal/iptables"
+	utiliptables "github.com/L-F-Z/cri-t/internal/iptables"
 )
 
 const (

@@ -13,9 +13,9 @@ import (
 	"google.golang.org/grpc/status"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
 )
 
 // RemoveContainer removes the container. If the container is running, the container

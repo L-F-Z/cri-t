@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cri-o/cri-o/utils/cmdrunner"
+	"github.com/L-F-Z/cri-t/utils/cmdrunner"
 )
 
 var _ = t.Describe("CommandRunner", func() {

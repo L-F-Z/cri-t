@@ -10,7 +10,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/cgroups/manager"
 	cgcfgs "github.com/opencontainers/runc/libcontainer/configs"
 
-	"github.com/cri-o/cri-o/internal/config/node"
+	"github.com/L-F-Z/cri-t/internal/config/node"
 )
 
 // This is a universal stats object to be used across different runtime implementations.

@@ -8,8 +8,8 @@ import (
 
 	"github.com/containers/storage/pkg/unshare"
 
-	"github.com/cri-o/cri-o/internal/dbusmgr"
-	"github.com/cri-o/cri-o/utils"
+	"github.com/L-F-Z/cri-t/internal/dbusmgr"
+	"github.com/L-F-Z/cri-t/utils"
 )
 
 // moveSelfToCgroup moves the current process to a new transient cgroup.

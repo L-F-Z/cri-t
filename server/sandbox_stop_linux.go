@@ -10,11 +10,11 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/linklogs"
-	"github.com/cri-o/cri-o/internal/log"
-	oci "github.com/cri-o/cri-o/internal/oci"
-	ann "github.com/cri-o/cri-o/pkg/annotations"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/linklogs"
+	"github.com/L-F-Z/cri-t/internal/log"
+	oci "github.com/L-F-Z/cri-t/internal/oci"
+	ann "github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
 func (s *Server) stopPodSandbox(ctx context.Context, sb *sandbox.Sandbox) error {

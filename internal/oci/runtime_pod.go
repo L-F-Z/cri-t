@@ -16,11 +16,11 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/config/cgmgr"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/opentelemetry"
-	"github.com/cri-o/cri-o/pkg/config"
-	"github.com/cri-o/cri-o/utils"
+	"github.com/L-F-Z/cri-t/internal/config/cgmgr"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/opentelemetry"
+	"github.com/L-F-Z/cri-t/pkg/config"
+	"github.com/L-F-Z/cri-t/utils"
 )
 
 // runtimePod is the Runtime interface implementation relying on conmon-rs to

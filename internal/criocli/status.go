@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
-	"github.com/cri-o/cri-o/internal/client"
+	"github.com/L-F-Z/cri-t/internal/client"
 )
 
 const (

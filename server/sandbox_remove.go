@@ -7,8 +7,8 @@ import (
 
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 // RemovePodSandbox deletes the sandbox. If there are any running containers in the

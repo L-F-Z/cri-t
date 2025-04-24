@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/opentelemetry"
-	"github.com/cri-o/cri-o/server/metrics"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/opentelemetry"
+	"github.com/L-F-Z/cri-t/server/metrics"
 )
 
 type ServerStream struct {

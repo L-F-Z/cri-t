@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/utils/cpuset"
 
-	"github.com/cri-o/cri-o/utils/cmdrunner"
+	"github.com/L-F-Z/cri-t/utils/cmdrunner"
 )
 
 func isASCII(s string) bool {

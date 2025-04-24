@@ -10,9 +10,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
-	"github.com/cri-o/cri-o/internal/lib"
-	"github.com/cri-o/cri-o/internal/storage"
-	"github.com/cri-o/cri-o/internal/version"
+	"github.com/L-F-Z/cri-t/internal/lib"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	"github.com/L-F-Z/cri-t/internal/version"
 )
 
 var WipeCommand = &cli.Command{

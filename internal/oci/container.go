@@ -23,10 +23,10 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
 
-	"github.com/cri-o/cri-o/internal/config/nsmgr"
-	"github.com/cri-o/cri-o/internal/storage"
-	"github.com/cri-o/cri-o/internal/storage/references"
-	ann "github.com/cri-o/cri-o/pkg/annotations"
+	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	"github.com/L-F-Z/cri-t/internal/storage/references"
+	ann "github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
 const defaultStopSignalInt = 15

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"runtime"
 
-	devicecfg "github.com/cri-o/cri-o/internal/config/device"
+	devicecfg "github.com/L-F-Z/cri-t/internal/config/device"
 )
 
 func (c *container) SpecAddDevices(configuredDevices, annotationDevices []devicecfg.Device, privilegedWithoutHostDevices, enableDeviceOwnershipFromSecurityContext bool) error {

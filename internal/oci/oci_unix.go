@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 	"k8s.io/client-go/tools/remotecommand"
 
-	"github.com/cri-o/cri-o/utils"
+	"github.com/L-F-Z/cri-t/utils"
 )
 
 func Kill(pid int) error {

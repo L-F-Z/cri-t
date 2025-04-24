@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	containereventservermock "github.com/cri-o/cri-o/test/mocks/containereventserver"
+	containereventservermock "github.com/L-F-Z/cri-t/test/mocks/containereventserver"
 )
 
 var events = []types.ContainerEventResponse{

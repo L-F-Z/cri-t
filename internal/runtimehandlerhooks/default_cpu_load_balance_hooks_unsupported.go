@@ -5,8 +5,8 @@ package runtimehandlerhooks
 import (
 	"context"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/oci"
 	"github.com/opencontainers/runtime-tools/generate"
 )
 

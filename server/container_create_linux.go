@@ -27,17 +27,17 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
 
-	"github.com/cri-o/cri-o/internal/config/device"
-	"github.com/cri-o/cri-o/internal/config/node"
-	"github.com/cri-o/cri-o/internal/config/rdt"
-	ctrfactory "github.com/cri-o/cri-o/internal/factory/container"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/linklogs"
-	"github.com/cri-o/cri-o/internal/log"
-	oci "github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/internal/runtimehandlerhooks"
-	"github.com/cri-o/cri-o/internal/storage"
-	crioann "github.com/cri-o/cri-o/pkg/annotations"
+	"github.com/L-F-Z/cri-t/internal/config/device"
+	"github.com/L-F-Z/cri-t/internal/config/node"
+	"github.com/L-F-Z/cri-t/internal/config/rdt"
+	ctrfactory "github.com/L-F-Z/cri-t/internal/factory/container"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/linklogs"
+	"github.com/L-F-Z/cri-t/internal/log"
+	oci "github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/runtimehandlerhooks"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	crioann "github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
 const (
@@ -1362,7 +1362,7 @@ func (s *Server) getSpecGen(ctr ctrfactory.Container, containerConfig *types.Con
 	if s.config.ReadOnly {
 		// tmpcopyup is a runc extension and is not part of the OCI spec.
 		// WORK ON: Use "overlay" mounts as an alternative to tmpfs with tmpcopyup
-		// Look at https://github.com/cri-o/cri-o/pull/1434#discussion_r177200245 for more info on this
+		// Look at https://github.com/L-F-Z/cri-t/pull/1434#discussion_r177200245 for more info on this
 		options := []string{"rw", "noexec", "nosuid", "nodev", "tmpcopyup"}
 		mounts := map[string]string{
 			"/run":     "mode=0755",

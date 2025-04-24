@@ -5,7 +5,7 @@ import (
 
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 // PodSandboxStats returns stats of the sandbox. If the sandbox does not exist, the call returns an error.

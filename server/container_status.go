@@ -11,9 +11,9 @@ import (
 	"google.golang.org/grpc/status"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/log"
-	oci "github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/internal/storage"
+	"github.com/L-F-Z/cri-t/internal/log"
+	oci "github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/storage"
 )
 
 const (

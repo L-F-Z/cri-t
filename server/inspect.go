@@ -16,11 +16,11 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/pkg/types"
-	"github.com/cri-o/cri-o/utils"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/pkg/types"
+	"github.com/L-F-Z/cri-t/utils"
 )
 
 func (s *Server) getIDMappingsInfo() types.IDMappings {

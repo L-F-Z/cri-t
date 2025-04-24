@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cri-o/cri-o/pkg/types"
-	"github.com/cri-o/cri-o/server"
+	"github.com/L-F-Z/cri-t/pkg/types"
+	"github.com/L-F-Z/cri-t/server"
 )
 
 const (

@@ -14,9 +14,9 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sirupsen/logrus"
 
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/pkg/annotations"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
 // ContainerRestore restores a checkpointed container.

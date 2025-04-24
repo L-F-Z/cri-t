@@ -6,9 +6,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/cri-o/cri-o/internal/config/nsmgr"
-	"github.com/cri-o/cri-o/internal/lib/namespace"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
+	"github.com/L-F-Z/cri-t/internal/lib/namespace"
+	"github.com/L-F-Z/cri-t/internal/oci"
 )
 
 func (s *Sandbox) AddManagedNamespaces(namespaces []nsmgr.Namespace) {

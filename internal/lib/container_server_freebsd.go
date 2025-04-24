@@ -5,7 +5,7 @@ import (
 
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
 
-	"github.com/cri-o/cri-o/pkg/annotations"
+	"github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
 func configNsPath(spec *rspec.Spec, nsType rspec.LinuxNamespaceType) (string, error) {

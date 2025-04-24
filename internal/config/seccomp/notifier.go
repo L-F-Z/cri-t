@@ -20,8 +20,8 @@ import (
 	libseccomp "github.com/seccomp/libseccomp-golang"
 	"golang.org/x/sys/unix"
 
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/pkg/annotations"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
 // Notifier wraps a seccomp notifier instance for a container.

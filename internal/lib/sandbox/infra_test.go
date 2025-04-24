@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	libsandbox "github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/pkg/config"
+	libsandbox "github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
 const (

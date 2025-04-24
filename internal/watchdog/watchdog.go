@@ -10,7 +10,7 @@ import (
 	"github.com/coreos/go-systemd/v22/daemon"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 // Watchdog is the main structure for this package.

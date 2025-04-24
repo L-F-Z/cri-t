@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cri-o/cri-o/internal/config/device"
+	"github.com/L-F-Z/cri-t/internal/config/device"
 )
 
 var _ = t.Describe("DeviceConfig", func() {

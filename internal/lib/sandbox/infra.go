@@ -15,9 +15,9 @@ import (
 	"golang.org/x/sys/unix"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/factory/container"
-	"github.com/cri-o/cri-o/internal/storage"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/factory/container"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 )
 
 func (b *sandboxBuilder) InitInfraContainer(serverConfig *libconfig.Config, podContainer *storage.ContainerInfo, sandboxIDMappings *idtools.IDMappings) error {

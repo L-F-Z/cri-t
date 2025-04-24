@@ -8,9 +8,9 @@ import (
 	nri "github.com/containerd/nri/pkg/adaptation"
 	"github.com/sirupsen/logrus"
 
-	config "github.com/cri-o/cri-o/internal/config/nri"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/version"
+	config "github.com/L-F-Z/cri-t/internal/config/nri"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/version"
 )
 
 // API provides an API for interfacing NRI from the rest of cri-o. It is

@@ -7,7 +7,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 // ResourceCleaner is a structure that tracks

@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/release-utils/command"
 	"sigs.k8s.io/release-utils/util"
 
-	"github.com/cri-o/cri-o/internal/version"
+	"github.com/L-F-Z/cri-t/internal/version"
 )
 
 const (
@@ -113,7 +113,7 @@ func run() error {
 	if _, err := fmt.Fprintf(templateFile, `# CRI-O %s
 
 The release notes have been generated for the commit range
-[%s...%s](https://github.com/cri-o/cri-o/compare/%s...%s) on %s.
+[%s...%s](https://github.com/L-F-Z/cri-t/compare/%s...%s) on %s.
 
 ## Downloads
 
@@ -153,7 +153,7 @@ To verify the artifact signatures via [cosign](https://github.com/sigstore/cosig
 `+"```"+`console
 > export COSIGN_EXPERIMENTAL=1
 > cosign verify-blob cri-o.amd64.%s.tar.gz \
-    --certificate-identity https://github.com/cri-o/cri-o/.github/workflows/test.yml@refs/tags/%s \
+    --certificate-identity https://github.com/L-F-Z/cri-t/.github/workflows/test.yml@refs/tags/%s \
     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
     --certificate-github-workflow-repository cri-o/cri-o \
     --certificate-github-workflow-ref refs/tags/%s \

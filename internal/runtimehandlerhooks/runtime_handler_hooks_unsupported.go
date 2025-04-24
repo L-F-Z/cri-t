@@ -5,8 +5,8 @@ package runtimehandlerhooks
 import (
 	"context"
 
-	"github.com/cri-o/cri-o/internal/log"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/log"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 )
 
 const (

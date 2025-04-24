@@ -28,8 +28,8 @@ import (
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 
-	"github.com/cri-o/cri-o/internal/storage/references"
-	"github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/storage/references"
+	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
 const (

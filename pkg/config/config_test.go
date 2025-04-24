@@ -11,9 +11,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	crioann "github.com/cri-o/cri-o/pkg/annotations"
-	"github.com/cri-o/cri-o/pkg/config"
-	"github.com/cri-o/cri-o/utils/cmdrunner"
+	crioann "github.com/L-F-Z/cri-t/pkg/annotations"
+	"github.com/L-F-Z/cri-t/pkg/config"
+	"github.com/L-F-Z/cri-t/utils/cmdrunner"
 )
 
 const (

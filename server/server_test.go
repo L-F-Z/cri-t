@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 
-	"github.com/cri-o/cri-o/server"
+	"github.com/L-F-Z/cri-t/server"
 )
 
 // The actual test suite.

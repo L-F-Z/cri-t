@@ -7,9 +7,9 @@ import (
 
 	cstorage "github.com/containers/storage"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/internal/registrar"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/registrar"
 )
 
 // GetStorageContainer searches for a container with the given name or ID in the given store.

@@ -10,7 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
 type entry struct {

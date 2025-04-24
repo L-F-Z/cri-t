@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	libsandbox "github.com/cri-o/cri-o/internal/lib/sandbox"
+	libsandbox "github.com/L-F-Z/cri-t/internal/lib/sandbox"
 )
 
 var _ = Describe("Sandbox:Builder", func() {

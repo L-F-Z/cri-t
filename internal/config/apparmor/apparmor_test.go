@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/config/apparmor"
+	"github.com/L-F-Z/cri-t/internal/config/apparmor"
 )
 
 // The actual test suite.

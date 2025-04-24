@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
 )
 
 func (s *Server) stopPodSandbox(ctx context.Context, sb *sandbox.Sandbox) error {

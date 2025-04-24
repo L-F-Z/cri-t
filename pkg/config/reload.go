@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"tags.cncf.io/container-device-interface/pkg/cdi"
 
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 // Reload reloads the configuration for the single crio.conf and the drop-in

@@ -34,7 +34,7 @@ import (
 	utilexec "k8s.io/utils/exec"
 	utilnet "k8s.io/utils/net"
 
-	utiliptables "github.com/cri-o/cri-o/internal/iptables"
+	utiliptables "github.com/L-F-Z/cri-t/internal/iptables"
 )
 
 // HostPortManager is an interface for adding and removing hostport for a given pod sandbox.

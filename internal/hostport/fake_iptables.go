@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilnet "k8s.io/utils/net"
 
-	utiliptables "github.com/cri-o/cri-o/internal/iptables"
+	utiliptables "github.com/L-F-Z/cri-t/internal/iptables"
 )
 
 type fakeChain struct {

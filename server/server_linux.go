@@ -13,9 +13,9 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
 
-	"github.com/cri-o/cri-o/internal/config/seccomp"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/server/metrics"
+	"github.com/L-F-Z/cri-t/internal/config/seccomp"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/server/metrics"
 )
 
 func (s *Server) startSeccompNotifierWatcher(ctx context.Context) error {

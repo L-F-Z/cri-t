@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	utiliptables "github.com/cri-o/cri-o/internal/iptables"
+	utiliptables "github.com/L-F-Z/cri-t/internal/iptables"
 )
 
 var _ = t.Describe("HostPort", func() {

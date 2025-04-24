@@ -16,16 +16,16 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
 
-	"github.com/cri-o/cri-o/internal/config/capabilities"
-	"github.com/cri-o/cri-o/internal/hostport"
-	"github.com/cri-o/cri-o/internal/lib/constants"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/memorystore"
-	oci "github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/internal/storage"
-	"github.com/cri-o/cri-o/internal/storage/references"
-	"github.com/cri-o/cri-o/pkg/annotations"
-	pkgConfig "github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/config/capabilities"
+	"github.com/L-F-Z/cri-t/internal/hostport"
+	"github.com/L-F-Z/cri-t/internal/lib/constants"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/memorystore"
+	oci "github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/storage"
+	"github.com/L-F-Z/cri-t/internal/storage/references"
+	"github.com/L-F-Z/cri-t/pkg/annotations"
+	pkgConfig "github.com/L-F-Z/cri-t/pkg/config"
 )
 
 var _ = t.Describe("Container", func() {

@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 
-	. "github.com/cri-o/cri-o/test/framework"
+	. "github.com/L-F-Z/cri-t/test/framework"
 )
 
 // TestLog runs the created specs.

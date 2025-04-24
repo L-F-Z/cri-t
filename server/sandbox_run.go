@@ -7,8 +7,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/hostport"
-	"github.com/cri-o/cri-o/internal/log"
+	"github.com/L-F-Z/cri-t/internal/hostport"
+	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 const (

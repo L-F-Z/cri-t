@@ -7,7 +7,7 @@ import (
 	selinux "github.com/opencontainers/selinux/go-selinux"
 	"github.com/opencontainers/selinux/go-selinux/label"
 
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
 )
 
 func (c *ContainerServer) addSandboxPlatform(sb *sandbox.Sandbox) error {

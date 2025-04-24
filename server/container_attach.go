@@ -10,8 +10,8 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
 )
 
 // Attach prepares a streaming endpoint to attach to a running container.

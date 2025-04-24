@@ -6,7 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
-	"github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
 var ConfigCommand = &cli.Command{

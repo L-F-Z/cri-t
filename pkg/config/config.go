@@ -28,25 +28,25 @@ import (
 	"k8s.io/utils/cpuset"
 	"tags.cncf.io/container-device-interface/pkg/cdi"
 
-	"github.com/cri-o/cri-o/internal/config/apparmor"
-	"github.com/cri-o/cri-o/internal/config/blockio"
-	"github.com/cri-o/cri-o/internal/config/capabilities"
-	"github.com/cri-o/cri-o/internal/config/cgmgr"
-	"github.com/cri-o/cri-o/internal/config/cnimgr"
-	"github.com/cri-o/cri-o/internal/config/conmonmgr"
-	"github.com/cri-o/cri-o/internal/config/device"
-	"github.com/cri-o/cri-o/internal/config/node"
-	"github.com/cri-o/cri-o/internal/config/nri"
-	"github.com/cri-o/cri-o/internal/config/nsmgr"
-	"github.com/cri-o/cri-o/internal/config/rdt"
-	"github.com/cri-o/cri-o/internal/config/seccomp"
-	"github.com/cri-o/cri-o/internal/config/ulimits"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/storage/references"
-	"github.com/cri-o/cri-o/pkg/annotations"
-	"github.com/cri-o/cri-o/server/metrics/collectors"
-	"github.com/cri-o/cri-o/utils"
-	"github.com/cri-o/cri-o/utils/cmdrunner"
+	"github.com/L-F-Z/cri-t/internal/config/apparmor"
+	"github.com/L-F-Z/cri-t/internal/config/blockio"
+	"github.com/L-F-Z/cri-t/internal/config/capabilities"
+	"github.com/L-F-Z/cri-t/internal/config/cgmgr"
+	"github.com/L-F-Z/cri-t/internal/config/cnimgr"
+	"github.com/L-F-Z/cri-t/internal/config/conmonmgr"
+	"github.com/L-F-Z/cri-t/internal/config/device"
+	"github.com/L-F-Z/cri-t/internal/config/node"
+	"github.com/L-F-Z/cri-t/internal/config/nri"
+	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
+	"github.com/L-F-Z/cri-t/internal/config/rdt"
+	"github.com/L-F-Z/cri-t/internal/config/seccomp"
+	"github.com/L-F-Z/cri-t/internal/config/ulimits"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/storage/references"
+	"github.com/L-F-Z/cri-t/pkg/annotations"
+	"github.com/L-F-Z/cri-t/server/metrics/collectors"
+	"github.com/L-F-Z/cri-t/utils"
+	"github.com/L-F-Z/cri-t/utils/cmdrunner"
 )
 
 // Defaults if none are specified.
@@ -502,7 +502,7 @@ type RuntimeConfig struct {
 
 	// Whether SELinux should be disabled within a pod,
 	// when it is running in the host network namespace
-	// https://github.com/cri-o/cri-o/issues/5501
+	// https://github.com/L-F-Z/cri-t/issues/5501
 	HostNetworkDisableSELinux bool `toml:"hostnetwork_disable_selinux"`
 
 	// Option to disable hostport mapping in CRI-O

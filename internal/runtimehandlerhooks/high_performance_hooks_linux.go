@@ -22,13 +22,13 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/utils/cpuset"
 
-	"github.com/cri-o/cri-o/internal/config/cgmgr"
-	"github.com/cri-o/cri-o/internal/config/node"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
-	crioannotations "github.com/cri-o/cri-o/pkg/annotations"
-	"github.com/cri-o/cri-o/utils/cmdrunner"
+	"github.com/L-F-Z/cri-t/internal/config/cgmgr"
+	"github.com/L-F-Z/cri-t/internal/config/node"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	crioannotations "github.com/L-F-Z/cri-t/pkg/annotations"
+	"github.com/L-F-Z/cri-t/utils/cmdrunner"
 )
 
 const (

@@ -7,9 +7,9 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 
-	"github.com/cri-o/cri-o/internal/mockutils"
-	containerstoragemock "github.com/cri-o/cri-o/test/mocks/containerstorage"
-	criostoragemock "github.com/cri-o/cri-o/test/mocks/criostorage"
+	"github.com/L-F-Z/cri-t/internal/mockutils"
+	containerstoragemock "github.com/L-F-Z/cri-t/test/mocks/containerstorage"
+	criostoragemock "github.com/L-F-Z/cri-t/test/mocks/criostorage"
 )
 
 // containers/image/storage.storageReference.StringWithinTransport.

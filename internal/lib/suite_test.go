@@ -13,16 +13,16 @@ import (
 	"go.uber.org/mock/gomock"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/hostport"
-	"github.com/cri-o/cri-o/internal/lib"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/memorystore"
-	"github.com/cri-o/cri-o/internal/oci"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
-	. "github.com/cri-o/cri-o/test/framework"
-	containerstoragemock "github.com/cri-o/cri-o/test/mocks/containerstorage"
-	libmock "github.com/cri-o/cri-o/test/mocks/lib"
-	ocimock "github.com/cri-o/cri-o/test/mocks/oci"
+	"github.com/L-F-Z/cri-t/internal/hostport"
+	"github.com/L-F-Z/cri-t/internal/lib"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/memorystore"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
+	. "github.com/L-F-Z/cri-t/test/framework"
+	containerstoragemock "github.com/L-F-Z/cri-t/test/mocks/containerstorage"
+	libmock "github.com/L-F-Z/cri-t/test/mocks/lib"
+	ocimock "github.com/L-F-Z/cri-t/test/mocks/oci"
 )
 
 // TestLib runs the created specs.

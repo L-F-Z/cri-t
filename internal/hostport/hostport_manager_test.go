@@ -26,7 +26,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	utiliptables "github.com/cri-o/cri-o/internal/iptables"
+	utiliptables "github.com/L-F-Z/cri-t/internal/iptables"
 )
 
 // newFakeManager creates a new Manager with fake iptables. Note that we need to create

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 
-	. "github.com/cri-o/cri-o/test/framework"
+	. "github.com/L-F-Z/cri-t/test/framework"
 )
 
 // TestLib runs the created specs.

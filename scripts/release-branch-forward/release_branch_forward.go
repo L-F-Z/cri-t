@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	remote              = "https://github.com/cri-o/cri-o"
+	remote              = "https://github.com/L-F-Z/cri-t"
 	git                 = "git"
 	grep                = "grep"
 	tail                = "tail"

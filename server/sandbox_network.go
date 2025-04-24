@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	utilnet "k8s.io/utils/net"
 
-	"github.com/cri-o/cri-o/internal/hostport"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/server/metrics"
+	"github.com/L-F-Z/cri-t/internal/hostport"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/server/metrics"
 )
 
 // networkStart sets up the sandbox's network and returns the pod IP on success

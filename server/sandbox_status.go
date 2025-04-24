@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc/status"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/oci"
 )
 
 // PodSandboxStatus returns the Status of the PodSandbox.

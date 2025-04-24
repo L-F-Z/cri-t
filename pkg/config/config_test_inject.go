@@ -8,8 +8,8 @@ package config
 import (
 	"github.com/cri-o/ocicni/pkg/ocicni"
 
-	"github.com/cri-o/cri-o/internal/config/cnimgr"
-	"github.com/cri-o/cri-o/internal/config/nsmgr"
+	"github.com/L-F-Z/cri-t/internal/config/cnimgr"
+	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
 )
 
 // SetCNIPlugin sets the network plugin for the Configuration. The function

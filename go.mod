@@ -1,6 +1,6 @@
 go 1.23
 
-module github.com/cri-o/cri-o
+module github.com/L-F-Z/cri-t
 
 require (
 	github.com/BurntSushi/toml v1.4.0

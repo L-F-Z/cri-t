@@ -7,8 +7,8 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 
-	runnerMock "github.com/cri-o/cri-o/test/mocks/cmdrunner"
-	"github.com/cri-o/cri-o/utils/cmdrunner"
+	runnerMock "github.com/L-F-Z/cri-t/test/mocks/cmdrunner"
+	"github.com/L-F-Z/cri-t/utils/cmdrunner"
 )
 
 const validPath = "/bin/ls"

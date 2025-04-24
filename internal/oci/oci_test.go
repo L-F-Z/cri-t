@@ -9,9 +9,9 @@ import (
 	. "github.com/onsi/gomega"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 
-	"github.com/cri-o/cri-o/internal/oci"
-	"github.com/cri-o/cri-o/pkg/annotations"
-	libconfig "github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/pkg/annotations"
+	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 )
 
 // The actual test suite.

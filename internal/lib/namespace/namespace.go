@@ -1,6 +1,6 @@
 package namespace
 
-import "github.com/cri-o/cri-o/internal/config/nsmgr"
+import "github.com/L-F-Z/cri-t/internal/config/nsmgr"
 
 // ManagedNamespace is a structure that holds all the necessary information a caller would
 // need for a sandbox managed namespace

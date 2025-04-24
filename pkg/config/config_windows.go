@@ -1,6 +1,6 @@
 package config
 
-import "github.com/cri-o/cri-o/utils/errdefs"
+import "github.com/L-F-Z/cri-t/utils/errdefs"
 
 // Defaults for linux/unix if none are specified
 const (

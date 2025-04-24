@@ -17,9 +17,9 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/config/cgmgr"
-	"github.com/cri-o/cri-o/internal/log"
-	"github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/internal/config/cgmgr"
+	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
 const (

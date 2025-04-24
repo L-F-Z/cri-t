@@ -6,8 +6,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/cri-o/cri-o/server/metrics/collectors"
-	. "github.com/cri-o/cri-o/test/framework"
+	"github.com/L-F-Z/cri-t/server/metrics/collectors"
+	. "github.com/L-F-Z/cri-t/test/framework"
 )
 
 // TestCollectors runs the created specs.

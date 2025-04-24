@@ -5,9 +5,9 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 
-	"github.com/cri-o/cri-o/internal/config/node"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/config/node"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/oci"
 )
 
 // DefaultCPULoadBalanceHooks is used to run additional hooks that will configure containers for CPU load balancing.

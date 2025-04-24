@@ -6,8 +6,8 @@ import (
 
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/config/cgmgr"
-	"github.com/cri-o/cri-o/internal/lib/sandbox"
+	"github.com/L-F-Z/cri-t/internal/config/cgmgr"
+	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
 )
 
 func generateSandboxCPUMetrics(sb *sandbox.Sandbox, cpu *cgmgr.CPUStats) []*types.Metric {

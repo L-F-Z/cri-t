@@ -14,8 +14,8 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"go.uber.org/mock/gomock"
 
-	"github.com/cri-o/cri-o/internal/lib"
-	"github.com/cri-o/cri-o/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/lib"
+	"github.com/L-F-Z/cri-t/internal/oci"
 )
 
 // The actual test suite.

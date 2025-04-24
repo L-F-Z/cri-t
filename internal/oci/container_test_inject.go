@@ -6,7 +6,7 @@
 package oci
 
 import (
-	"github.com/cri-o/cri-o/pkg/config"
+	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
 // SetState sets the container state.

@@ -1,6 +1,6 @@
 package storage
 
-import "github.com/cri-o/cri-o/internal/storage/references"
+import "github.com/L-F-Z/cri-t/internal/storage/references"
 
 // RegistryImageReference is a name of a specific image location on a registry.
 // The image may or may not exist, and, in general, what image the name points to may change
