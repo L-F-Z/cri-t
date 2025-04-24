@@ -33,7 +33,7 @@ var _ = t.Describe("ImageList", func() {
 			// Given
 			size := uint64(100)
 			gomock.InOrder(
-				imageServerMock.EXPECT().ListImages(gomock.Any()).
+				imageServerMock.EXPECT().ListImages().
 					Return([]storage.ImageResult{
 						{ID: imageID, Size: &size, User: "10"},
 					}, nil),
@@ -56,11 +56,9 @@ var _ = t.Describe("ImageList", func() {
 			gomock.InOrder(
 				imageServerMock.EXPECT().HeuristicallyTryResolvingStringAsIDPrefix("image").
 					Return(nil),
-				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName(
-					gomock.Any(), "image").
+				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("image").
 					Return([]storage.RegistryImageReference{imageCandidate}, nil),
-				imageServerMock.EXPECT().ImageStatusByName(
-					gomock.Any(), imageCandidate).
+				imageServerMock.EXPECT().ImageStatusByName(imageCandidate).
 					Return(&storage.ImageResult{
 						ID:   imageID,
 						User: "10", Size: &size,
@@ -81,7 +79,7 @@ var _ = t.Describe("ImageList", func() {
 		It("should fail when image listing errors", func() {
 			// Given
 			gomock.InOrder(
-				imageServerMock.EXPECT().ListImages(gomock.Any()).
+				imageServerMock.EXPECT().ListImages().
 					Return(nil, t.TestError),
 			)
 
@@ -99,11 +97,9 @@ var _ = t.Describe("ImageList", func() {
 			gomock.InOrder(
 				imageServerMock.EXPECT().HeuristicallyTryResolvingStringAsIDPrefix("image").
 					Return(nil),
-				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName(
-					gomock.Any(), "image").
+				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("image").
 					Return([]storage.RegistryImageReference{imageCandidate}, nil),
-				imageServerMock.EXPECT().ImageStatusByName(
-					gomock.Any(), imageCandidate).
+				imageServerMock.EXPECT().ImageStatusByName(imageCandidate).
 					Return(nil, t.TestError),
 			)
 

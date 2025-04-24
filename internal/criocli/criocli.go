@@ -1069,22 +1069,6 @@ func getCrioFlags(defConf *libconfig.Config) []cli.Flag {
 			Value:   defConf.StreamIdleTimeout,
 		},
 		&cli.StringFlag{
-			Name:        "registries-conf",
-			Usage:       "path to the registries.conf file.",
-			Destination: &defConf.SystemContext.SystemRegistriesConfPath,
-			Hidden:      true,
-			EnvVars:     []string{"CONTAINER_REGISTRIES_CONF"},
-			TakesFile:   true,
-		},
-		&cli.StringFlag{
-			Name:        "registries-conf-dir",
-			Usage:       "path to the registries.conf.d directory.",
-			Destination: &defConf.SystemContext.SystemRegistriesConfDirPath,
-			Hidden:      true,
-			EnvVars:     []string{"CONTAINER_REGISTRIES_CONF_DIR"},
-			TakesFile:   true,
-		},
-		&cli.StringFlag{
 			Name:   "address",
 			Usage:  "address used for the publish command.",
 			Hidden: true,

@@ -13,7 +13,6 @@ import (
 	"sync"
 
 	"github.com/containers/common/pkg/seccomp"
-	imagetypes "github.com/containers/image/v5/types"
 	json "github.com/json-iterator/go"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sirupsen/logrus"
@@ -229,7 +228,6 @@ func (c *Config) Profile() *seccomp.Seccomp {
 // Setup can be used to setup the seccomp profile.
 func (c *Config) Setup(
 	ctx context.Context,
-	sys *imagetypes.SystemContext,
 	msgChan chan Notification,
 	containerID, containerName string,
 	sandboxAnnotations, imageAnnotations map[string]string,

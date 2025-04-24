@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"github.com/containers/common/pkg/seccomp"
-	imagetypes "github.com/containers/image/v5/types"
 	"github.com/opencontainers/runtime-tools/generate"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
@@ -32,7 +31,6 @@ func New() *Config {
 // Setup can be used to setup the seccomp profile.
 func (c *Config) Setup(
 	ctx context.Context,
-	sys *imagetypes.SystemContext,
 	msgChan chan Notification,
 	containerID, containerName string,
 	sandboxAnnotations, imageAnnotations map[string]string,

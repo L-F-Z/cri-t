@@ -112,8 +112,6 @@ type CgroupPullConfiguration struct {
 // subset of copy.Options that is supported by reexec.
 // WARNING: All ofImageCopyOptions must be JSON-representable because it is included in pullImageArgs.
 type ImageCopyOptions struct {
-	SourceCtx        *types.SystemContext
-	DestinationCtx   *types.SystemContext
 	OciDecryptConfig *encconfig.DecryptConfig
 	ProgressInterval time.Duration
 	Progress         chan types.ProgressProperties `json:"-"`
@@ -124,11 +122,11 @@ type ImageCopyOptions struct {
 // implementation.
 type ImageServer interface {
 	// ListImages returns list of all images.
-	ListImages(systemContext *types.SystemContext) ([]ImageResult, error)
+	ListImages() ([]ImageResult, error)
 	// ImageStatusByID returns status of a single image
-	ImageStatusByID(systemContext *types.SystemContext, id StorageImageID) (*ImageResult, error)
+	ImageStatusByID(id StorageImageID) (*ImageResult, error)
 	// ImageStatusByName returns status of an image tagged with name.
-	ImageStatusByName(systemContext *types.SystemContext, name RegistryImageReference) (*ImageResult, error)
+	ImageStatusByName(name RegistryImageReference) (*ImageResult, error)
 
 	// PullImage imports an image from the specified location.
 	//
@@ -145,10 +143,10 @@ type ImageServer interface {
 	PullImage(ctx context.Context, imageName RegistryImageReference, options *ImageCopyOptions) (RegistryImageReference, error)
 
 	// DeleteImage deletes a storage image (impacting all its tags)
-	DeleteImage(systemContext *types.SystemContext, id StorageImageID) error
+	DeleteImage(id StorageImageID) error
 	// UntagImage removes a name from the specified image, and if it was
 	// the only name the image had, removes the image.
-	UntagImage(systemContext *types.SystemContext, name RegistryImageReference) error
+	UntagImage(name RegistryImageReference) error
 
 	// GetStore returns the reference to the storage library Store which
 	// the image server uses to hold images, and is the destination used
@@ -161,7 +159,7 @@ type ImageServer interface {
 	HeuristicallyTryResolvingStringAsIDPrefix(heuristicInput string) *StorageImageID
 	// CandidatesForPotentiallyShortImageName resolves an image name into a set of fully-qualified image names (domain/repo/image:tag|@digest).
 	// It will only return an empty slice if err != nil.
-	CandidatesForPotentiallyShortImageName(systemContext *types.SystemContext, imageName string) ([]RegistryImageReference, error)
+	CandidatesForPotentiallyShortImageName(imageName string) ([]RegistryImageReference, error)
 
 	// UpdatePinnedImagesList updates pinned and pause images list in imageService.
 	UpdatePinnedImagesList(imageList []string)
@@ -242,8 +240,8 @@ func (svc *imageService) makeRepoDigests(knownRepoDigests []reference.Canonical,
 	return imageDigest, repoDigests
 }
 
-func (svc *imageService) buildImageCacheItem(systemContext *types.SystemContext, ref types.ImageReference) (imageCacheItem, error) {
-	imageFull, err := ref.NewImage(svc.ctx, systemContext)
+func (svc *imageService) buildImageCacheItem(ref types.ImageReference) (imageCacheItem, error) {
+	imageFull, err := ref.NewImage(svc.ctx, nil)
 	if err != nil {
 		return imageCacheItem{}, err
 	}
@@ -259,7 +257,7 @@ func (svc *imageService) buildImageCacheItem(systemContext *types.SystemContext,
 		return imageCacheItem{}, fmt.Errorf("inspecting image: %w", err)
 	}
 
-	rawSource, err := ref.NewImageSource(svc.ctx, systemContext)
+	rawSource, err := ref.NewImageSource(svc.ctx, nil)
 	if err != nil {
 		return imageCacheItem{}, err
 	}
@@ -357,7 +355,7 @@ func (svc *imageService) buildImageResult(image *storage.Image, cacheItem imageC
 	}, nil
 }
 
-func (svc *imageService) ListImages(systemContext *types.SystemContext) ([]ImageResult, error) {
+func (svc *imageService) ListImages() ([]ImageResult, error) {
 	images, err := svc.store.Images()
 	if err != nil {
 		return nil, err
@@ -374,7 +372,7 @@ func (svc *imageService) ListImages(systemContext *types.SystemContext) ([]Image
 		cacheItem, ok := svc.imageCache[image.ID]
 		svc.imageCacheLock.Unlock()
 		if !ok {
-			cacheItem, err = svc.buildImageCacheItem(systemContext, ref)
+			cacheItem, err = svc.buildImageCacheItem(ref)
 			if err != nil {
 				if os.IsNotExist(err) && imageIsBeingPulled(image) { // skip reporting errors if the images haven't finished pulling
 					continue
@@ -407,24 +405,24 @@ func imageIsBeingPulled(image *storage.Image) bool {
 	return false
 }
 
-func (svc *imageService) ImageStatusByName(systemContext *types.SystemContext, name RegistryImageReference) (*ImageResult, error) {
+func (svc *imageService) ImageStatusByName(name RegistryImageReference) (*ImageResult, error) {
 	unstableRef, err := istorage.Transport.NewStoreReference(svc.store, name.Raw(), "")
 	if err != nil {
 		return nil, err
 	}
-	return svc.imageStatus(systemContext, unstableRef)
+	return svc.imageStatus(unstableRef)
 }
 
-func (svc *imageService) ImageStatusByID(systemContext *types.SystemContext, id StorageImageID) (*ImageResult, error) {
+func (svc *imageService) ImageStatusByID(id StorageImageID) (*ImageResult, error) {
 	ref, err := id.imageRef(svc)
 	if err != nil {
 		return nil, err
 	}
-	return svc.imageStatus(systemContext, ref)
+	return svc.imageStatus(ref)
 }
 
 // imageStatus is the underlying implementation of ImageStatus* for a storage unstableRef.
-func (svc *imageService) imageStatus(systemContext *types.SystemContext, unstableRef types.ImageReference) (*ImageResult, error) {
+func (svc *imageService) imageStatus(unstableRef types.ImageReference) (*ImageResult, error) {
 	resolvedRef, image, err := svc.storageTransport.ResolveReference(unstableRef)
 	if err != nil {
 		return nil, err
@@ -438,7 +436,7 @@ func (svc *imageService) imageStatus(systemContext *types.SystemContext, unstabl
 
 	if !ok {
 		var err error
-		cacheItem, err = svc.buildImageCacheItem(systemContext, resolvedRef) // Single-use-only, not actually cached
+		cacheItem, err = svc.buildImageCacheItem(resolvedRef) // Single-use-only, not actually cached
 		if err != nil {
 			return nil, err
 		}
@@ -668,13 +666,6 @@ func pullImageImplementation(ctx context.Context, lookup *imageLookupService, st
 	if err != nil {
 		return RegistryImageReference{}, err
 	}
-	srcSystemContext := types.SystemContext{}
-	if options.SourceCtx != nil {
-		srcSystemContext = *options.SourceCtx // A shallow copy
-	}
-	if secure := lookup.isSecureIndex(imageName.Registry()); !secure {
-		srcSystemContext.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
-	}
 
 	destRef, err := istorage.Transport.NewStoreReference(store, imageName.Raw(), "")
 	if err != nil {
@@ -682,8 +673,6 @@ func pullImageImplementation(ctx context.Context, lookup *imageLookupService, st
 	}
 
 	manifestBytes, err := copy.Image(ctx, nil, destRef, srcRef, &copy.Options{
-		SourceCtx:        &srcSystemContext,
-		DestinationCtx:   options.DestinationCtx,
 		OciDecryptConfig: options.OciDecryptConfig,
 		ProgressInterval: options.ProgressInterval,
 		Progress:         options.Progress,
@@ -700,7 +689,7 @@ func pullImageImplementation(ctx context.Context, lookup *imageLookupService, st
 	return references.RegistryImageReferenceFromRaw(canonicalRef), nil
 }
 
-func (svc *imageService) UntagImage(systemContext *types.SystemContext, name RegistryImageReference) error {
+func (svc *imageService) UntagImage(name RegistryImageReference) error {
 	unstableRef, err := istorage.Transport.NewStoreReference(svc.store, name.Raw(), "")
 	if err != nil {
 		return err
@@ -725,17 +714,17 @@ func (svc *imageService) UntagImage(systemContext *types.SystemContext, name Reg
 	}
 	// Note that the remainingNames check is unavoidably racy:
 	// the image can be tagged with another name at this point.
-	return svc.DeleteImage(systemContext, newExactStorageImageID(img.ID))
+	return svc.DeleteImage(newExactStorageImageID(img.ID))
 }
 
 // DeleteImage deletes a storage image (impacting all its tags).
-func (svc *imageService) DeleteImage(systemContext *types.SystemContext, id StorageImageID) error {
+func (svc *imageService) DeleteImage(id StorageImageID) error {
 	ref, err := id.imageRef(svc)
 	if err != nil {
 		return err
 	}
 
-	return ref.DeleteImage(svc.ctx, systemContext)
+	return ref.DeleteImage(svc.ctx, nil)
 }
 
 func (svc *imageService) GetStore() storage.Store {
@@ -798,15 +787,9 @@ func (svc *imageService) HeuristicallyTryResolvingStringAsIDPrefix(heuristicInpu
 
 // CandidatesForPotentiallyShortImageName resolves an image name into a set of fully-qualified image names (domain/repo/image:tag|@digest).
 // It will only return an empty slice if err != nil.
-func (svc *imageService) CandidatesForPotentiallyShortImageName(systemContext *types.SystemContext, imageName string) ([]RegistryImageReference, error) {
+func (svc *imageService) CandidatesForPotentiallyShortImageName(imageName string) ([]RegistryImageReference, error) {
 	// Always resolve unqualified names to all candidates. We should use a more secure mode once we settle on a shortname alias table.
-	sc := types.SystemContext{}
-	if systemContext != nil {
-		sc = *systemContext // A shallow copy
-	}
-	disabled := types.ShortNameModeDisabled
-	sc.ShortNameMode = &disabled
-	resolved, err := shortnames.Resolve(&sc, imageName)
+	resolved, err := shortnames.Resolve(nil, imageName)
 	if err != nil {
 		return nil, err
 	}

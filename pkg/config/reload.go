@@ -171,11 +171,11 @@ func (c *Config) ReloadPinnedImages(newConfig *Config) {
 // ReloadRegistries reloads the registry configuration from the Configs
 // `SystemContext`. The method errors in case of any update failure.
 func (c *Config) ReloadRegistries() error {
-	registries, err := sysregistriesv2.TryUpdatingCache(c.SystemContext)
+	registries, err := sysregistriesv2.TryUpdatingCache(nil)
 	if err != nil {
 		return fmt.Errorf(
 			"system registries reload failed: %s: %w",
-			sysregistriesv2.ConfigPath(c.SystemContext),
+			sysregistriesv2.ConfigPath(nil),
 			err,
 		)
 	}

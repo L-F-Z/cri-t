@@ -19,7 +19,6 @@ import (
 	"github.com/containers/common/pkg/hooks"
 	conmonconfig "github.com/containers/conmon/runner/config"
 	"github.com/containers/image/v5/pkg/sysregistriesv2"
-	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
 	"github.com/cri-o/ocicni/pkg/ocicni"
 	"github.com/docker/go-units"
@@ -46,7 +45,6 @@ import (
 	"github.com/cri-o/cri-o/internal/storage/references"
 	"github.com/cri-o/cri-o/pkg/annotations"
 	"github.com/cri-o/cri-o/server/metrics/collectors"
-	"github.com/cri-o/cri-o/server/useragent"
 	"github.com/cri-o/cri-o/utils"
 	"github.com/cri-o/cri-o/utils/cmdrunner"
 )
@@ -84,8 +82,7 @@ type Config struct {
 	MetricsConfig
 	TracingConfig
 	StatsConfig
-	NRI           *nri.Config
-	SystemContext *types.SystemContext
+	NRI *nri.Config
 }
 
 // Iface provides a config interface for data encapsulation.
@@ -680,11 +677,6 @@ type tomlConfig struct {
 	} `toml:"crio"`
 }
 
-// SetSystemContext configures the SystemContext used by containers/image library.
-func (t *tomlConfig) SetSystemContext(c *Config) {
-	c.SystemContext.BigFilesTemporaryDir = c.ImageConfig.BigFilesTemporaryDir
-}
-
 func (t *tomlConfig) toConfig(c *Config) {
 	c.Comment = "# "
 	c.RootConfig = t.Crio.RootConfig
@@ -696,7 +688,6 @@ func (t *tomlConfig) toConfig(c *Config) {
 	c.TracingConfig = t.Crio.Tracing.TracingConfig
 	c.StatsConfig = t.Crio.Stats.StatsConfig
 	c.NRI = t.Crio.NRI.Config
-	t.SetSystemContext(c)
 }
 
 func (t *tomlConfig) fromConfig(c *Config) {
@@ -859,15 +850,8 @@ func DefaultConfig() (*Config, error) {
 		return nil, err
 	}
 	cgroupManager := cgmgr.New()
-	ua, err := useragent.Get()
-	if err != nil {
-		return nil, fmt.Errorf("get user agent: %w", err)
-	}
 	return &Config{
 		Comment: "# ",
-		SystemContext: &types.SystemContext{
-			DockerRegistryUserAgent: ua,
-		},
 		RootConfig: RootConfig{
 			Root:              storeOpts.GraphRoot,
 			RunRoot:           storeOpts.RunRoot,
@@ -976,7 +960,7 @@ func (c *Config) Validate(onExecution bool) error {
 		return fmt.Errorf("validating root config: %w", err)
 	}
 
-	if err := c.RuntimeConfig.Validate(c.SystemContext, onExecution); err != nil {
+	if err := c.RuntimeConfig.Validate(onExecution); err != nil {
 		return fmt.Errorf("validating runtime config: %w", err)
 	}
 
@@ -1094,7 +1078,7 @@ func (c *RootConfig) CleanShutdownSupportedFileName() string {
 // The parameter `onExecution` specifies if the validation should include
 // execution checks. It returns an `error` on validation failure, otherwise
 // `nil`.
-func (c *RuntimeConfig) Validate(systemContext *types.SystemContext, onExecution bool) error {
+func (c *RuntimeConfig) Validate(onExecution bool) error {
 	if err := c.ulimitsConfig.LoadUlimits(c.DefaultUlimits); err != nil {
 		return err
 	}
@@ -1165,7 +1149,7 @@ func (c *RuntimeConfig) Validate(systemContext *types.SystemContext, onExecution
 		}
 
 		// Validate the system registries configuration
-		if _, err := sysregistriesv2.GetRegistries(systemContext); err != nil {
+		if _, err := sysregistriesv2.GetRegistries(nil); err != nil {
 			return fmt.Errorf("invalid registries: %w", err)
 		}
 

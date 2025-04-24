@@ -32,12 +32,11 @@ var _ = t.Describe("ImageRemove", func() {
 			gomock.InOrder(
 				imageServerMock.EXPECT().HeuristicallyTryResolvingStringAsIDPrefix("image").
 					Return(nil),
-				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName(
-					gomock.Any(), "image").
+				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("image").
 					Return([]storage.RegistryImageReference{resolvedImageName}, nil),
-				imageServerMock.EXPECT().ImageStatusByName(gomock.Any(), gomock.Any()).
+				imageServerMock.EXPECT().ImageStatusByName(gomock.Any()).
 					Return(&storage.ImageResult{}, nil),
-				imageServerMock.EXPECT().UntagImage(gomock.Any(),
+				imageServerMock.EXPECT().UntagImage(
 					resolvedImageName).Return(nil),
 			)
 			// When
@@ -56,8 +55,7 @@ var _ = t.Describe("ImageRemove", func() {
 			gomock.InOrder(
 				imageServerMock.EXPECT().HeuristicallyTryResolvingStringAsIDPrefix(testSHA256).
 					Return(&parsedTestSHA256),
-				imageServerMock.EXPECT().DeleteImage(
-					gomock.Any(), parsedTestSHA256).
+				imageServerMock.EXPECT().DeleteImage(parsedTestSHA256).
 					Return(nil),
 			)
 			// When
@@ -73,13 +71,11 @@ var _ = t.Describe("ImageRemove", func() {
 			gomock.InOrder(
 				imageServerMock.EXPECT().HeuristicallyTryResolvingStringAsIDPrefix("image").
 					Return(nil),
-				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName(
-					gomock.Any(), "image").
+				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("image").
 					Return([]storage.RegistryImageReference{resolvedImageName}, nil),
-				imageServerMock.EXPECT().ImageStatusByName(gomock.Any(), gomock.Any()).
+				imageServerMock.EXPECT().ImageStatusByName(gomock.Any()).
 					Return(&storage.ImageResult{}, nil),
-				imageServerMock.EXPECT().UntagImage(gomock.Any(),
-					resolvedImageName).Return(t.TestError),
+				imageServerMock.EXPECT().UntagImage(resolvedImageName).Return(t.TestError),
 			)
 			// When
 			_, err := sut.RemoveImage(context.Background(),
@@ -94,8 +90,7 @@ var _ = t.Describe("ImageRemove", func() {
 			gomock.InOrder(
 				imageServerMock.EXPECT().HeuristicallyTryResolvingStringAsIDPrefix("image").
 					Return(nil),
-				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName(
-					gomock.Any(), "image").
+				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("image").
 					Return(nil, t.TestError),
 			)
 			// When
@@ -125,8 +120,7 @@ var _ = t.Describe("ImageRemove", func() {
 			gomock.InOrder(
 				imageServerMock.EXPECT().HeuristicallyTryResolvingStringAsIDPrefix(testSHA256).
 					Return(&parsedTestSHA256),
-				imageServerMock.EXPECT().DeleteImage(
-					gomock.Any(), parsedTestSHA256).
+				imageServerMock.EXPECT().DeleteImage(parsedTestSHA256).
 					Return(fmt.Errorf("invalid image: %w", storagetypes.ErrImageUnknown)),
 			)
 

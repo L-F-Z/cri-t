@@ -44,32 +44,32 @@ func (m *MockImageServer) EXPECT() *MockImageServerMockRecorder {
 }
 
 // CandidatesForPotentiallyShortImageName mocks base method.
-func (m *MockImageServer) CandidatesForPotentiallyShortImageName(systemContext *types.SystemContext, imageName string) ([]storage0.RegistryImageReference, error) {
+func (m *MockImageServer) CandidatesForPotentiallyShortImageName(imageName string) ([]storage0.RegistryImageReference, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CandidatesForPotentiallyShortImageName", systemContext, imageName)
+	ret := m.ctrl.Call(m, "CandidatesForPotentiallyShortImageName", imageName)
 	ret0, _ := ret[0].([]storage0.RegistryImageReference)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CandidatesForPotentiallyShortImageName indicates an expected call of CandidatesForPotentiallyShortImageName.
-func (mr *MockImageServerMockRecorder) CandidatesForPotentiallyShortImageName(systemContext, imageName any) *gomock.Call {
+func (mr *MockImageServerMockRecorder) CandidatesForPotentiallyShortImageName(imageName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CandidatesForPotentiallyShortImageName", reflect.TypeOf((*MockImageServer)(nil).CandidatesForPotentiallyShortImageName), systemContext, imageName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CandidatesForPotentiallyShortImageName", reflect.TypeOf((*MockImageServer)(nil).CandidatesForPotentiallyShortImageName), imageName)
 }
 
 // DeleteImage mocks base method.
-func (m *MockImageServer) DeleteImage(systemContext *types.SystemContext, id storage0.StorageImageID) error {
+func (m *MockImageServer) DeleteImage(id storage0.StorageImageID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteImage", systemContext, id)
+	ret := m.ctrl.Call(m, "DeleteImage", id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteImage indicates an expected call of DeleteImage.
-func (mr *MockImageServerMockRecorder) DeleteImage(systemContext, id any) *gomock.Call {
+func (mr *MockImageServerMockRecorder) DeleteImage(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImage", reflect.TypeOf((*MockImageServer)(nil).DeleteImage), systemContext, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImage", reflect.TypeOf((*MockImageServer)(nil).DeleteImage), id)
 }
 
 // GetStore mocks base method.
@@ -101,62 +101,62 @@ func (mr *MockImageServerMockRecorder) HeuristicallyTryResolvingStringAsIDPrefix
 }
 
 // ImageStatusByID mocks base method.
-func (m *MockImageServer) ImageStatusByID(systemContext *types.SystemContext, id storage0.StorageImageID) (*storage0.ImageResult, error) {
+func (m *MockImageServer) ImageStatusByID(id storage0.StorageImageID) (*storage0.ImageResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ImageStatusByID", systemContext, id)
+	ret := m.ctrl.Call(m, "ImageStatusByID", id)
 	ret0, _ := ret[0].(*storage0.ImageResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ImageStatusByID indicates an expected call of ImageStatusByID.
-func (mr *MockImageServerMockRecorder) ImageStatusByID(systemContext, id any) *gomock.Call {
+func (mr *MockImageServerMockRecorder) ImageStatusByID(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageStatusByID", reflect.TypeOf((*MockImageServer)(nil).ImageStatusByID), systemContext, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageStatusByID", reflect.TypeOf((*MockImageServer)(nil).ImageStatusByID), id)
 }
 
 // ImageStatusByName mocks base method.
-func (m *MockImageServer) ImageStatusByName(systemContext *types.SystemContext, name storage0.RegistryImageReference) (*storage0.ImageResult, error) {
+func (m *MockImageServer) ImageStatusByName(name storage0.RegistryImageReference) (*storage0.ImageResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ImageStatusByName", systemContext, name)
+	ret := m.ctrl.Call(m, "ImageStatusByName", name)
 	ret0, _ := ret[0].(*storage0.ImageResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ImageStatusByName indicates an expected call of ImageStatusByName.
-func (mr *MockImageServerMockRecorder) ImageStatusByName(systemContext, name any) *gomock.Call {
+func (mr *MockImageServerMockRecorder) ImageStatusByName(name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageStatusByName", reflect.TypeOf((*MockImageServer)(nil).ImageStatusByName), systemContext, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageStatusByName", reflect.TypeOf((*MockImageServer)(nil).ImageStatusByName), name)
 }
 
 // IsRunningImageAllowed mocks base method.
-func (m *MockImageServer) IsRunningImageAllowed(ctx context.Context, systemContext *types.SystemContext, userSpecifiedImage storage0.RegistryImageReference, imageID storage0.StorageImageID) error {
+func (m *MockImageServer) IsRunningImageAllowed(ctx context.Context, userSpecifiedImage storage0.RegistryImageReference, imageID storage0.StorageImageID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsRunningImageAllowed", ctx, systemContext, userSpecifiedImage, imageID)
+	ret := m.ctrl.Call(m, "IsRunningImageAllowed", ctx, userSpecifiedImage, imageID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // IsRunningImageAllowed indicates an expected call of IsRunningImageAllowed.
-func (mr *MockImageServerMockRecorder) IsRunningImageAllowed(ctx, systemContext, userSpecifiedImage, imageID any) *gomock.Call {
+func (mr *MockImageServerMockRecorder) IsRunningImageAllowed(ctx, userSpecifiedImage, imageID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunningImageAllowed", reflect.TypeOf((*MockImageServer)(nil).IsRunningImageAllowed), ctx, systemContext, userSpecifiedImage, imageID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunningImageAllowed", reflect.TypeOf((*MockImageServer)(nil).IsRunningImageAllowed), ctx, userSpecifiedImage, imageID)
 }
 
 // ListImages mocks base method.
-func (m *MockImageServer) ListImages(systemContext *types.SystemContext) ([]storage0.ImageResult, error) {
+func (m *MockImageServer) ListImages() ([]storage0.ImageResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListImages", systemContext)
+	ret := m.ctrl.Call(m, "ListImages")
 	ret0, _ := ret[0].([]storage0.ImageResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ListImages indicates an expected call of ListImages.
-func (mr *MockImageServerMockRecorder) ListImages(systemContext any) *gomock.Call {
+func (mr *MockImageServerMockRecorder) ListImages() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListImages", reflect.TypeOf((*MockImageServer)(nil).ListImages), systemContext)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListImages", reflect.TypeOf((*MockImageServer)(nil).ListImages))
 }
 
 // PullImage mocks base method.
@@ -175,17 +175,17 @@ func (mr *MockImageServerMockRecorder) PullImage(ctx, imageName, options any) *g
 }
 
 // UntagImage mocks base method.
-func (m *MockImageServer) UntagImage(systemContext *types.SystemContext, name storage0.RegistryImageReference) error {
+func (m *MockImageServer) UntagImage(name storage0.RegistryImageReference) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UntagImage", systemContext, name)
+	ret := m.ctrl.Call(m, "UntagImage", name)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UntagImage indicates an expected call of UntagImage.
-func (mr *MockImageServerMockRecorder) UntagImage(systemContext, name any) *gomock.Call {
+func (mr *MockImageServerMockRecorder) UntagImage(name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UntagImage", reflect.TypeOf((*MockImageServer)(nil).UntagImage), systemContext, name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UntagImage", reflect.TypeOf((*MockImageServer)(nil).UntagImage), name)
 }
 
 // UpdatePinnedImagesList mocks base method.
@@ -225,33 +225,33 @@ func (m *MockRuntimeServer) EXPECT() *MockRuntimeServerMockRecorder {
 }
 
 // CreateContainer mocks base method.
-func (m *MockRuntimeServer) CreateContainer(systemContext *types.SystemContext, podName, podID, userRequestedImage string, imageID storage0.StorageImageID, containerName, containerID, metadataName string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (storage0.ContainerInfo, error) {
+func (m *MockRuntimeServer) CreateContainer(podName, podID, userRequestedImage string, imageID storage0.StorageImageID, containerName, containerID, metadataName string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (storage0.ContainerInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateContainer", systemContext, podName, podID, userRequestedImage, imageID, containerName, containerID, metadataName, attempt, idMappingsOptions, labelOptions, privileged)
+	ret := m.ctrl.Call(m, "CreateContainer", podName, podID, userRequestedImage, imageID, containerName, containerID, metadataName, attempt, idMappingsOptions, labelOptions, privileged)
 	ret0, _ := ret[0].(storage0.ContainerInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateContainer indicates an expected call of CreateContainer.
-func (mr *MockRuntimeServerMockRecorder) CreateContainer(systemContext, podName, podID, userRequestedImage, imageID, containerName, containerID, metadataName, attempt, idMappingsOptions, labelOptions, privileged any) *gomock.Call {
+func (mr *MockRuntimeServerMockRecorder) CreateContainer(podName, podID, userRequestedImage, imageID, containerName, containerID, metadataName, attempt, idMappingsOptions, labelOptions, privileged any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContainer", reflect.TypeOf((*MockRuntimeServer)(nil).CreateContainer), systemContext, podName, podID, userRequestedImage, imageID, containerName, containerID, metadataName, attempt, idMappingsOptions, labelOptions, privileged)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContainer", reflect.TypeOf((*MockRuntimeServer)(nil).CreateContainer), podName, podID, userRequestedImage, imageID, containerName, containerID, metadataName, attempt, idMappingsOptions, labelOptions, privileged)
 }
 
 // CreatePodSandbox mocks base method.
-func (m *MockRuntimeServer) CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage storage0.RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (storage0.ContainerInfo, error) {
+func (m *MockRuntimeServer) CreatePodSandbox(podName, podID string, pauseImage storage0.RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (storage0.ContainerInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePodSandbox", systemContext, podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged)
+	ret := m.ctrl.Call(m, "CreatePodSandbox", podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged)
 	ret0, _ := ret[0].(storage0.ContainerInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreatePodSandbox indicates an expected call of CreatePodSandbox.
-func (mr *MockRuntimeServerMockRecorder) CreatePodSandbox(systemContext, podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged any) *gomock.Call {
+func (mr *MockRuntimeServerMockRecorder) CreatePodSandbox(podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodSandbox", reflect.TypeOf((*MockRuntimeServer)(nil).CreatePodSandbox), systemContext, podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePodSandbox", reflect.TypeOf((*MockRuntimeServer)(nil).CreatePodSandbox), podName, podID, pauseImage, containerName, metadataName, uid, namespace, attempt, idMappingsOptions, labelOptions, privileged)
 }
 
 // DeleteContainer mocks base method.

@@ -222,30 +222,6 @@ var _ = t.Describe("Config", func() {
 			// Then
 			Expect(err).ToNot(HaveOccurred())
 		})
-
-		It("should fail if registries file does not exist", func() {
-			// Given
-			sut.SystemContext.SystemRegistriesConfPath = invalidPath
-
-			// When
-			err := sut.ReloadRegistries()
-
-			// Then
-			Expect(err).To(HaveOccurred())
-		})
-
-		It("should fail if registries file is invalid", func() {
-			// Given
-			regConf := t.MustTempFile("reload-registries")
-			Expect(os.WriteFile(regConf, []byte("invalid"), 0o755)).To(Succeed())
-			sut.SystemContext.SystemRegistriesConfPath = regConf
-
-			// When
-			err := sut.ReloadRegistries()
-
-			// Then
-			Expect(err).To(HaveOccurred())
-		})
 	})
 
 	t.Describe("ReloadSeccompProfile", func() {

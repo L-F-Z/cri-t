@@ -3,11 +3,9 @@ package storage_test
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/containers/image/v5/docker/reference"
 	istorage "github.com/containers/image/v5/storage"
-	"github.com/containers/image/v5/types"
 	cs "github.com/containers/storage"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -46,9 +44,6 @@ var _ = t.Describe("Image", func() {
 
 		// The system under test
 		sut storage.ImageServer
-
-		// The empty system context
-		ctx *types.SystemContext
 	)
 
 	// Prepare the system under test
@@ -60,13 +55,7 @@ var _ = t.Describe("Image", func() {
 
 		// Setup the SUT
 		var err error
-		ctx = &types.SystemContext{
-			SystemRegistriesConfPath: t.MustTempFile("registries"),
-		}
 		config := &config.Config{
-			SystemContext: &types.SystemContext{
-				SystemRegistriesConfPath: t.MustTempFile("registries"),
-			},
 			ImageConfig: config.ImageConfig{
 				DefaultTransport:   "docker://",
 				InsecureRegistries: []string{},
@@ -81,7 +70,6 @@ var _ = t.Describe("Image", func() {
 	})
 	AfterEach(func() {
 		mockCtrl.Finish()
-		Expect(os.Remove(ctx.SystemRegistriesConfPath)).To(Succeed())
 	})
 
 	t.Describe("GetImageService", func() {
@@ -101,9 +89,6 @@ var _ = t.Describe("Image", func() {
 			// Given
 			// When
 			config := &config.Config{
-				SystemContext: &types.SystemContext{
-					SystemRegistriesConfPath: "../../test/registries.conf",
-				},
 				ImageConfig: config.ImageConfig{
 					DefaultTransport:   "",
 					InsecureRegistries: []string{},
@@ -181,9 +166,6 @@ var _ = t.Describe("Image", func() {
 
 			// When
 			refs, err := sut.CandidatesForPotentiallyShortImageName(
-				&types.SystemContext{
-					SystemRegistriesConfPath: "../../test/registries.conf",
-				},
 				testImageName,
 			)
 
@@ -203,9 +185,6 @@ var _ = t.Describe("Image", func() {
 
 			// When
 			refs, err := sut.CandidatesForPotentiallyShortImageName(
-				&types.SystemContext{
-					SystemRegistriesConfPath: "../../test/registries.conf",
-				},
 				testImageAlias,
 			)
 
@@ -222,7 +201,7 @@ var _ = t.Describe("Image", func() {
 			gomock.InOrder()
 
 			// When
-			refs, err := sut.CandidatesForPotentiallyShortImageName(ctx, imageName)
+			refs, err := sut.CandidatesForPotentiallyShortImageName(imageName)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -236,9 +215,6 @@ var _ = t.Describe("Image", func() {
 
 			// When
 			refs, err := sut.CandidatesForPotentiallyShortImageName(
-				&types.SystemContext{
-					SystemRegistriesConfPath: "../../test/registries.conf",
-				},
 				testImageWithTagAndDigest,
 			)
 			// Then
@@ -256,7 +232,7 @@ var _ = t.Describe("Image", func() {
 			gomock.InOrder()
 
 			// When
-			refs, err := sut.CandidatesForPotentiallyShortImageName(ctx, testNormalizedImageWithTagAndDigest)
+			refs, err := sut.CandidatesForPotentiallyShortImageName(testNormalizedImageWithTagAndDigest)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -270,7 +246,7 @@ var _ = t.Describe("Image", func() {
 			gomock.InOrder()
 
 			// When
-			refs, err := sut.CandidatesForPotentiallyShortImageName(ctx, "camelCaseName")
+			refs, err := sut.CandidatesForPotentiallyShortImageName("camelCaseName")
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -281,7 +257,6 @@ var _ = t.Describe("Image", func() {
 			// Given
 			gomock.InOrder()
 			config := &config.Config{
-				SystemContext: ctx,
 				ImageConfig: config.ImageConfig{
 					DefaultTransport:   "",
 					InsecureRegistries: []string{},
@@ -294,9 +269,6 @@ var _ = t.Describe("Image", func() {
 
 			// When
 			refs, err := sut.CandidatesForPotentiallyShortImageName(
-				&types.SystemContext{
-					SystemRegistriesConfPath: "/dev/null",
-				},
 				testImageName,
 			)
 
@@ -323,7 +295,7 @@ var _ = t.Describe("Image", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// When
-			err = sut.UntagImage(&types.SystemContext{}, ref)
+			err = sut.UntagImage(ref)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -339,7 +311,7 @@ var _ = t.Describe("Image", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// When
-			err = sut.UntagImage(&types.SystemContext{}, ref)
+			err = sut.UntagImage(ref)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -370,7 +342,7 @@ var _ = t.Describe("Image", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// When
-			err = sut.UntagImage(&types.SystemContext{}, ref)
+			err = sut.UntagImage(ref)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -422,7 +394,7 @@ var _ = t.Describe("Image", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// When
-			res, err := sut.ImageStatusByName(&types.SystemContext{}, ref)
+			res, err := sut.ImageStatusByName(ref)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -439,7 +411,7 @@ var _ = t.Describe("Image", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// When
-			res, err := sut.ImageStatusByName(&types.SystemContext{}, ref)
+			res, err := sut.ImageStatusByName(ref)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -460,7 +432,7 @@ var _ = t.Describe("Image", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// When
-			res, err := sut.ImageStatusByName(&types.SystemContext{}, ref)
+			res, err := sut.ImageStatusByName(ref)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -476,7 +448,7 @@ var _ = t.Describe("Image", func() {
 			)
 
 			// When
-			res, err := sut.ListImages(&types.SystemContext{})
+			res, err := sut.ListImages()
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -516,7 +488,7 @@ var _ = t.Describe("Image", func() {
 			)
 
 			// When
-			res, err := sut.ListImages(&types.SystemContext{})
+			res, err := sut.ListImages()
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -530,7 +502,7 @@ var _ = t.Describe("Image", func() {
 			)
 
 			// When
-			res, err := sut.ListImages(&types.SystemContext{})
+			res, err := sut.ListImages()
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -545,7 +517,7 @@ var _ = t.Describe("Image", func() {
 			)
 
 			// When
-			res, err := sut.ListImages(&types.SystemContext{})
+			res, err := sut.ListImages()
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -562,7 +534,7 @@ var _ = t.Describe("Image", func() {
 			)
 
 			// When
-			res, err := sut.ListImages(&types.SystemContext{})
+			res, err := sut.ListImages()
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -577,9 +549,7 @@ var _ = t.Describe("Image", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// When
-			res, err := sut.PullImage(context.Background(), imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{},
-			})
+			res, err := sut.PullImage(context.Background(), imageRef, &storage.ImageCopyOptions{})
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -592,9 +562,7 @@ var _ = t.Describe("Image", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// When
-			res, err := sut.PullImage(context.Background(), imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{},
-			})
+			res, err := sut.PullImage(context.Background(), imageRef, &storage.ImageCopyOptions{})
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -609,9 +577,7 @@ var _ = t.Describe("Image", func() {
 			// When
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
-			res, err := sut.PullImage(ctx, imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{},
-			})
+			res, err := sut.PullImage(ctx, imageRef, &storage.ImageCopyOptions{})
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -627,9 +593,7 @@ var _ = t.Describe("Image", func() {
 			// When
 			ctx, cancel := context.WithTimeout(context.Background(), 0)
 			defer cancel()
-			res, err := sut.PullImage(ctx, imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{},
-			})
+			res, err := sut.PullImage(ctx, imageRef, &storage.ImageCopyOptions{})
 
 			// Then
 			Expect(err).To(HaveOccurred())

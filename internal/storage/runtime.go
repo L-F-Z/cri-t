@@ -66,7 +66,7 @@ type RuntimeServer interface {
 	// with the pod's infrastructure container having the same value for
 	// both its pod's ID and its container ID.
 	// Pointer arguments can be nil.  All other arguments are required.
-	CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error)
+	CreatePodSandbox(podName, podID string, pauseImage RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error)
 
 	// GetContainerMetadata returns the metadata we've stored for a container.
 	GetContainerMetadata(idOrName string) (RuntimeContainerMetadata, error)
@@ -76,7 +76,7 @@ type RuntimeServer interface {
 	// CreateContainer creates a container with the specified ID.
 	// Pointer arguments can be nil.
 	// All other arguments are required.
-	CreateContainer(systemContext *types.SystemContext, podName, podID, userRequestedImage string, imageID StorageImageID, containerName, containerID, metadataName string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error)
+	CreateContainer(podName, podID, userRequestedImage string, imageID StorageImageID, containerName, containerID, metadataName string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error)
 	// DeleteContainer deletes a container, unmounting it first if need be.
 	DeleteContainer(ctx context.Context, idOrName string) error
 
@@ -157,7 +157,7 @@ type runtimeContainerMetadataTemplate struct {
 	privileged   bool   // Applicable to both PodSandboxes and Containers
 }
 
-func (r *runtimeService) createContainerOrPodSandbox(systemContext *types.SystemContext, containerID string, template *runtimeContainerMetadataTemplate, idMappingsOptions *storage.IDMappingOptions, labelOptions []string) (ci ContainerInfo, retErr error) {
+func (r *runtimeService) createContainerOrPodSandbox(containerID string, template *runtimeContainerMetadataTemplate, idMappingsOptions *storage.IDMappingOptions, labelOptions []string) (ci ContainerInfo, retErr error) {
 	if template.podName == "" || template.podID == "" {
 		return ContainerInfo{}, ErrInvalidPodName
 	}
@@ -191,7 +191,7 @@ func (r *runtimeService) createContainerOrPodSandbox(systemContext *types.System
 	if err != nil {
 		return ContainerInfo{}, err
 	}
-	image, err := ref.NewImage(r.ctx, systemContext)
+	image, err := ref.NewImage(r.ctx, nil)
 	if err != nil {
 		return ContainerInfo{}, err
 	}
@@ -298,7 +298,7 @@ func (r *runtimeService) createContainerOrPodSandbox(systemContext *types.System
 	}, nil
 }
 
-func (r *runtimeService) CreatePodSandbox(systemContext *types.SystemContext, podName, podID string, pauseImage RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error) {
+func (r *runtimeService) CreatePodSandbox(podName, podID string, pauseImage RegistryImageReference, containerName, metadataName, uid, namespace string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error) {
 	// Check if we have the specified image.
 	var ref types.ImageReference
 	ref, err := istorage.Transport.NewStoreReference(r.storageImageServer.GetStore(), pauseImage.Raw(), "")
@@ -311,14 +311,7 @@ func (r *runtimeService) CreatePodSandbox(systemContext *types.SystemContext, po
 			return ContainerInfo{}, err
 		}
 		logrus.Debugf("Couldn't find image %q, retrieving it", pauseImage)
-		sourceCtx := types.SystemContext{}
-		if systemContext != nil {
-			sourceCtx = *systemContext // A shallow copy
-		}
-		pulledRef, err := r.storageImageServer.PullImage(context.Background(), pauseImage, &ImageCopyOptions{
-			SourceCtx:      &sourceCtx,
-			DestinationCtx: systemContext,
-		})
+		pulledRef, err := r.storageImageServer.PullImage(context.Background(), pauseImage, &ImageCopyOptions{})
 		if err != nil {
 			return ContainerInfo{}, err
 		}
@@ -336,7 +329,7 @@ func (r *runtimeService) CreatePodSandbox(systemContext *types.SystemContext, po
 	// Resolve the image ID.
 	imageID := storageImageIDFromImage(img)
 
-	return r.createContainerOrPodSandbox(systemContext, podID, &runtimeContainerMetadataTemplate{
+	return r.createContainerOrPodSandbox(podID, &runtimeContainerMetadataTemplate{
 		podName:            podName,
 		podID:              podID,
 		userRequestedImage: pauseImage.StringForOutOfProcessConsumptionOnly(), // userRequestedImage is only used to write to container metadata on disk
@@ -350,8 +343,8 @@ func (r *runtimeService) CreatePodSandbox(systemContext *types.SystemContext, po
 	}, idMappingsOptions, labelOptions)
 }
 
-func (r *runtimeService) CreateContainer(systemContext *types.SystemContext, podName, podID, userRequestedImage string, imageID StorageImageID, containerName, containerID, metadataName string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error) {
-	return r.createContainerOrPodSandbox(systemContext, containerID, &runtimeContainerMetadataTemplate{
+func (r *runtimeService) CreateContainer(podName, podID, userRequestedImage string, imageID StorageImageID, containerName, containerID, metadataName string, attempt uint32, idMappingsOptions *storage.IDMappingOptions, labelOptions []string, privileged bool) (ContainerInfo, error) {
+	return r.createContainerOrPodSandbox(containerID, &runtimeContainerMetadataTemplate{
 		podName:            podName,
 		podID:              podID,
 		userRequestedImage: userRequestedImage,

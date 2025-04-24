@@ -3,7 +3,6 @@ package storage_test
 import (
 	"context"
 
-	"github.com/containers/image/v5/types"
 	cs "github.com/containers/storage"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -517,7 +516,7 @@ var _ = t.Describe("Runtime", func() {
 				)
 
 				// When
-				info, err = sut.CreateContainer(&types.SystemContext{},
+				info, err = sut.CreateContainer(
 					"podName", "podID", "imagename", imageID,
 					"containerName", "containerID", "",
 					0, nil, []string{"mountLabel"}, false,
@@ -534,7 +533,7 @@ var _ = t.Describe("Runtime", func() {
 				)
 
 				// When
-				info, err = sut.CreatePodSandbox(&types.SystemContext{},
+				info, err = sut.CreatePodSandbox(
 					"podName", "podID", pauseImage,
 					"containerName", "metadataName",
 					"uid", "namespace", 0, nil, []string{"mountLabel"}, false,
@@ -555,7 +554,7 @@ var _ = t.Describe("Runtime", func() {
 			// Given
 
 			// When
-			_, err := sut.CreateContainer(&types.SystemContext{},
+			_, err := sut.CreateContainer(
 				"podName", "", "imagename", imageID,
 				"containerName", "containerID", "metadataName",
 				0, nil, []string{"mountLabel"}, false,
@@ -570,7 +569,7 @@ var _ = t.Describe("Runtime", func() {
 			// Given
 
 			// When
-			_, err := sut.CreateContainer(&types.SystemContext{},
+			_, err := sut.CreateContainer(
 				"", "podID", "imagename", imageID,
 				"containerName", "containerID", "metadataName",
 				0, nil, []string{"mountLabel"}, false,
@@ -585,7 +584,7 @@ var _ = t.Describe("Runtime", func() {
 			// Given
 
 			// When
-			_, err := sut.CreateContainer(&types.SystemContext{},
+			_, err := sut.CreateContainer(
 				"podName", "podID", "imagename", imageID,
 				"", "containerID", "metadataName",
 				0, nil, []string{"mountLabel"}, false,
@@ -616,7 +615,7 @@ var _ = t.Describe("Runtime", func() {
 			)
 
 			// When
-			_, err := sut.CreateContainer(&types.SystemContext{},
+			_, err := sut.CreateContainer(
 				"podName", "podID", "imagename", imageID,
 				"containerName", "containerID", "metadataName",
 				0, nil, []string{"mountLabel"}, false,
@@ -643,7 +642,7 @@ var _ = t.Describe("Runtime", func() {
 			)
 
 			// When
-			_, err := sut.CreateContainer(&types.SystemContext{},
+			_, err := sut.CreateContainer(
 				"podName", "podID", "imagename", imageID,
 				"containerName", "containerID", "metadataName",
 				0, nil, []string{"mountLabel"}, false,
@@ -670,7 +669,7 @@ var _ = t.Describe("Runtime", func() {
 			)
 
 			// When
-			_, err = sut.CreatePodSandbox(&types.SystemContext{},
+			_, err = sut.CreatePodSandbox(
 				"podName", "podID", pauseImage,
 				"containerName", "metadataName",
 				"uid", "namespace", 0, nil, []string{"mountLabel"}, false,
@@ -692,7 +691,7 @@ var _ = t.Describe("Runtime", func() {
 			)
 
 			// When
-			_, err = sut.CreatePodSandbox(&types.SystemContext{},
+			_, err = sut.CreatePodSandbox(
 				"podName", "podID", pauseImage,
 				"containerName", "metadataName",
 				"uid", "namespace", 0, nil, []string{"mountLabel"}, false,
@@ -712,7 +711,7 @@ var _ = t.Describe("Runtime", func() {
 			)
 
 			// When
-			_, err := sut.CreateContainer(&types.SystemContext{},
+			_, err := sut.CreateContainer(
 				"podName", "podID", "imagename", imageID,
 				"containerName", "containerID", "metadataName",
 				0, nil, []string{"mountLabel"}, false,
@@ -737,7 +736,7 @@ var _ = t.Describe("Runtime", func() {
 			)
 
 			// When
-			_, err := sut.CreateContainer(&types.SystemContext{},
+			_, err := sut.CreateContainer(
 				"podName", "podID", "imagename", imageID,
 				"containerName", "containerID", "metadataName",
 				0, nil, []string{"mountLabel"}, false,
@@ -789,13 +788,10 @@ var _ = t.Describe("Runtime", func() {
 			Expect(sut).NotTo(BeNil())
 
 			// Given
-			mockCreatePodSandboxExpectingCopyOptions(&storage.ImageCopyOptions{
-				SourceCtx:      &types.SystemContext{},
-				DestinationCtx: &types.SystemContext{},
-			})
+			mockCreatePodSandboxExpectingCopyOptions(&storage.ImageCopyOptions{})
 
 			// When
-			info, err = sut.CreatePodSandbox(&types.SystemContext{},
+			info, err = sut.CreatePodSandbox(
 				"podName", "podID", pauseImage,
 				"containerName", "metadataName",
 				"uid", "namespace", 0, nil, []string{"mountLabel"}, false,

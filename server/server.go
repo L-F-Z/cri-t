@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	imageTypes "github.com/containers/image/v5/types"
 	"github.com/containers/storage/pkg/idtools"
 	storageTypes "github.com/containers/storage/types"
 	"github.com/fsnotify/fsnotify"
@@ -98,7 +97,6 @@ type Server struct {
 type pullArguments struct {
 	image         string
 	sandboxCgroup string
-	credentials   imageTypes.DockerAuthConfig
 	namespace     string
 }
 
@@ -507,7 +505,7 @@ func New(
 
 	s.startReloadWatcher(ctx)
 	if s.config.AutoReloadRegistries {
-		go s.startWatcherForMirrorRegistries(ctx, s.config.SystemContext.SystemRegistriesConfDirPath)
+		go s.startWatcherForMirrorRegistries(ctx, "")
 	}
 	// Start the metrics server if configured to be enabled
 	if s.config.EnableMetrics {
@@ -649,7 +647,7 @@ func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []storage
 	// disk usage gets too high.
 	if shouldWipeImages {
 		for img := range imageMapToDelete {
-			if err := s.StorageImageServer().DeleteImage(s.config.SystemContext, img); err != nil {
+			if err := s.StorageImageServer().DeleteImage(img); err != nil {
 				log.Warnf(ctx, "Failed to remove image %s: %v", img, err)
 			}
 		}

@@ -163,18 +163,18 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	// Get imageName and imageID that are later requested in container status
 	var imgResult *storage.ImageResult
 	if id := s.StorageImageServer().HeuristicallyTryResolvingStringAsIDPrefix(userRequestedImage); id != nil {
-		imgResult, err = s.StorageImageServer().ImageStatusByID(s.config.SystemContext, *id)
+		imgResult, err = s.StorageImageServer().ImageStatusByID(*id)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		potentialMatches, err := s.StorageImageServer().CandidatesForPotentiallyShortImageName(s.config.SystemContext, userRequestedImage)
+		potentialMatches, err := s.StorageImageServer().CandidatesForPotentiallyShortImageName(userRequestedImage)
 		if err != nil {
 			return nil, err
 		}
 		var imgResultErr error
 		for _, name := range potentialMatches {
-			imgResult, imgResultErr = s.StorageImageServer().ImageStatusByName(s.config.SystemContext, name)
+			imgResult, imgResultErr = s.StorageImageServer().ImageStatusByName(name)
 			if imgResultErr == nil {
 				break
 			}
@@ -217,7 +217,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	metadata := containerConfig.Metadata
 
 	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container storage creation")
-	containerInfo, err := s.StorageRuntimeServer().CreateContainer(s.config.SystemContext,
+	containerInfo, err := s.StorageRuntimeServer().CreateContainer(
 		sb.Name(), sb.ID(),
 		userRequestedImage, imageID,
 		containerName, containerID,
@@ -505,7 +505,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	if !ctr.Privileged() {
 		notifier, ref, err := s.config.Seccomp().Setup(
 			ctx,
-			s.config.SystemContext,
 			s.seccompNotifierChan,
 			containerID,
 			ctr.Config().Metadata.Name,

@@ -490,7 +490,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	if err != nil {
 		return nil, err
 	}
-	podContainer, err := s.StorageRuntimeServer().CreatePodSandbox(s.config.SystemContext,
+	podContainer, err := s.StorageRuntimeServer().CreatePodSandbox(
 		sboxName, sboxID,
 		pauseImage,
 		containerName,
@@ -762,7 +762,6 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	if !privileged {
 		_, ref, err := s.config.Seccomp().Setup(
 			ctx,
-			s.config.SystemContext,
 			nil,
 			"",
 			"",

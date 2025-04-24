@@ -238,7 +238,7 @@ var _ = t.Describe("Config", func() {
 		It("should succeed with default config", func() {
 			// Given
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -249,7 +249,7 @@ var _ = t.Describe("Config", func() {
 			sut = runtimeValidConfig()
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, true)
+			err := sut.RuntimeConfig.Validate(true)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -261,7 +261,7 @@ var _ = t.Describe("Config", func() {
 			sut.AdditionalDevices = []string{"/dev/null:/dev/null:rw"}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, true)
+			err := sut.RuntimeConfig.Validate(true)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -279,7 +279,7 @@ var _ = t.Describe("Config", func() {
 			sut.HooksDir = []string{validDirPath, validDirPath, validDirPath}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, true)
+			err := sut.RuntimeConfig.Validate(true)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -295,7 +295,7 @@ var _ = t.Describe("Config", func() {
 			sut.HooksDir = []string{invalidPath, validDirPath, validDirPath}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, true)
+			err := sut.RuntimeConfig.Validate(true)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -311,7 +311,7 @@ var _ = t.Describe("Config", func() {
 			sut.HooksDir = []string{filepath.Join(validDirPath, "new")}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, true)
+			err := sut.RuntimeConfig.Validate(true)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -325,7 +325,7 @@ var _ = t.Describe("Config", func() {
 			sut.HooksDir = []string{validDirPath}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, true)
+			err := sut.RuntimeConfig.Validate(true)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -336,7 +336,7 @@ var _ = t.Describe("Config", func() {
 			sut.DefaultUlimits = []string{invalidPath}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -347,7 +347,7 @@ var _ = t.Describe("Config", func() {
 			sut.Runtimes[config.DefaultRuntime].ContainerMinMemory = "123invalid"
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -358,7 +358,7 @@ var _ = t.Describe("Config", func() {
 			sut.AdditionalDevices = []string{"::::"}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -369,7 +369,7 @@ var _ = t.Describe("Config", func() {
 			sut.AdditionalDevices = []string{invalidPath}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -380,7 +380,7 @@ var _ = t.Describe("Config", func() {
 			sut.AdditionalDevices = []string{"/dev/null:/dev/null:abc"}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -391,7 +391,7 @@ var _ = t.Describe("Config", func() {
 			sut.AdditionalDevices = []string{"wrong:/dev/null:rw"}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -402,7 +402,7 @@ var _ = t.Describe("Config", func() {
 			sut.AdditionalDevices = []string{"/dev/null:wrong:rw"}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -413,7 +413,7 @@ var _ = t.Describe("Config", func() {
 			sut.Runtimes = config.Runtimes{}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -424,7 +424,7 @@ var _ = t.Describe("Config", func() {
 			sut.Runtimes[config.DefaultRuntime] = &config.RuntimeHandler{RuntimePath: "not-existing"}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, true)
+			err := sut.RuntimeConfig.Validate(true)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -446,7 +446,7 @@ var _ = t.Describe("Config", func() {
 			sut.DefaultRuntime = ""
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -459,7 +459,7 @@ var _ = t.Describe("Config", func() {
 			sut.Runtimes = config.Runtimes{}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -471,7 +471,7 @@ var _ = t.Describe("Config", func() {
 			sut.DefaultSysctls = []string{invalid}
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -481,7 +481,7 @@ var _ = t.Describe("Config", func() {
 			sut.Timezone = "America/New_York"
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -492,7 +492,7 @@ var _ = t.Describe("Config", func() {
 			sut.Timezone = "InvalidTimezone"
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -504,7 +504,7 @@ var _ = t.Describe("Config", func() {
 			sut.Timezone = "Local"
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -540,7 +540,7 @@ var _ = t.Describe("Config", func() {
 			sut.RuntimeConfig.InfraCtrCPUSet = "unparsable"
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).To(HaveOccurred())
@@ -605,7 +605,7 @@ var _ = t.Describe("Config", func() {
 			sut.RuntimeConfig.InfraCtrCPUSet = "0"
 
 			// When
-			err = sut.RuntimeConfig.Validate(nil, false)
+			err = sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
@@ -618,7 +618,7 @@ var _ = t.Describe("Config", func() {
 			sut.RuntimeConfig.InfraCtrCPUSet = ""
 
 			// When
-			err := sut.RuntimeConfig.Validate(nil, false)
+			err := sut.RuntimeConfig.Validate(false)
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())

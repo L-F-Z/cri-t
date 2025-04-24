@@ -26,7 +26,6 @@ import (
 func (s *Server) PullImage(ctx context.Context, req *types.PullImageRequest) (*types.PullImageResponse, error) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	var err error
 	image := ""
 	img := req.Image
 	if img != nil {
@@ -43,25 +42,6 @@ func (s *Server) PullImage(ctx context.Context, req *types.PullImageRequest) (*t
 		}
 		if sc.Metadata != nil {
 			pullArgs.namespace = sc.Metadata.Namespace
-		}
-	}
-
-	if req.Auth != nil {
-		username := req.Auth.Username
-		password := req.Auth.Password
-		if req.Auth.Auth != "" {
-			username, password, err = decodeDockerAuth(req.Auth.Auth)
-			if err != nil {
-				log.Debugf(ctx, "Error decoding authentication for image %s: %v", image, err)
-				return nil, err
-			}
-		}
-		// Specifying a username indicates the user intends to send authentication to the registry.
-		if username != "" {
-			pullArgs.credentials = imageTypes.DockerAuthConfig{
-				Username: username,
-				Password: password,
-			}
 		}
 	}
 
@@ -120,17 +100,6 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 
-	sourceCtx, err := s.contextForNamespace(pullArgs.namespace)
-	if err != nil {
-		return storage.RegistryImageReference{}, fmt.Errorf("get context for namespace: %w", err)
-	}
-	log.Debugf(ctx, "Using pull policy path for image %s", pullArgs.image)
-
-	sourceCtx.DockerLogMirrorChoice = true // Add info level log of the pull source
-	if pullArgs.credentials.Username != "" {
-		sourceCtx.DockerAuthConfig = &pullArgs.credentials
-	}
-
 	decryptConfig, err := getDecryptionKeys(s.config.DecryptionKeysPath)
 	if err != nil {
 		return storage.RegistryImageReference{}, err
@@ -151,7 +120,7 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 		}
 	}
 
-	remoteCandidates, err := s.StorageImageServer().CandidatesForPotentiallyShortImageName(s.config.SystemContext, pullArgs.image)
+	remoteCandidates, err := s.StorageImageServer().CandidatesForPotentiallyShortImageName(pullArgs.image)
 	if err != nil {
 		return storage.RegistryImageReference{}, err
 	}
@@ -159,7 +128,7 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 	// and they all fail, this error value should be overwritten by a real failure.
 	lastErr := errors.New("internal error: pullImage failed but reported no error reason")
 	for _, remoteCandidateName := range remoteCandidates {
-		repoDigest, err := s.pullImageCandidate(ctx, &sourceCtx, remoteCandidateName, decryptConfig, cgroup)
+		repoDigest, err := s.pullImageCandidate(ctx, remoteCandidateName, decryptConfig, cgroup)
 		if err == nil {
 			// Update metric for successful image pulls
 			metrics.Instance().MetricImagePullsSuccessesInc(remoteCandidateName)
@@ -170,14 +139,7 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 	return storage.RegistryImageReference{}, lastErr
 }
 
-// contextForNamespace takes the provided namespace and returns a modifiable
-// copy of the servers system context.
-func (s *Server) contextForNamespace(namespace string) (imageTypes.SystemContext, error) {
-	ctx := *s.config.SystemContext // A shallow copy we can modify
-	return ctx, nil
-}
-
-func (s *Server) pullImageCandidate(ctx context.Context, sourceCtx *imageTypes.SystemContext, remoteCandidateName storage.RegistryImageReference, decryptConfig *encconfig.DecryptConfig, cgroup string) (storage.RegistryImageReference, error) {
+func (s *Server) pullImageCandidate(ctx context.Context, remoteCandidateName storage.RegistryImageReference, decryptConfig *encconfig.DecryptConfig, cgroup string) (storage.RegistryImageReference, error) {
 	// Collect pull progress metrics
 	progress := make(chan imageTypes.ProgressProperties)
 	defer close(progress)
@@ -191,8 +153,6 @@ func (s *Server) pullImageCandidate(ctx context.Context, sourceCtx *imageTypes.S
 	go consumeImagePullProgress(ctx, cancel, s.Config().PullProgressTimeout, progress, remoteCandidateName)
 
 	repoDigest, err := s.StorageImageServer().PullImage(pullCtx, remoteCandidateName, &storage.ImageCopyOptions{
-		SourceCtx:        sourceCtx,
-		DestinationCtx:   s.config.SystemContext,
 		OciDecryptConfig: decryptConfig,
 		ProgressInterval: s.Config().PullProgressTimeout / 10,
 		Progress:         progress,

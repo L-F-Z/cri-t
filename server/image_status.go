@@ -75,7 +75,7 @@ func (s *Server) ImageStatus(ctx context.Context, req *types.ImageStatusRequest)
 // Returns (nil, nil) if image was not found.
 func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (*pkgstorage.ImageResult, error) {
 	if id := s.StorageImageServer().HeuristicallyTryResolvingStringAsIDPrefix(spec.Image); id != nil {
-		status, err := s.StorageImageServer().ImageStatusByID(s.config.SystemContext, *id)
+		status, err := s.StorageImageServer().ImageStatusByID(*id)
 		if err != nil {
 			if errors.Is(err, istorage.ErrNoSuchImage) {
 				log.Infof(ctx, "Image %s not found", spec.Image)
@@ -87,13 +87,13 @@ func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (
 		return status, nil
 	}
 
-	potentialMatches, err := s.StorageImageServer().CandidatesForPotentiallyShortImageName(s.config.SystemContext, spec.Image)
+	potentialMatches, err := s.StorageImageServer().CandidatesForPotentiallyShortImageName(spec.Image)
 	if err != nil {
 		return nil, err
 	}
 	var lastErr error
 	for _, name := range potentialMatches {
-		status, err := s.StorageImageServer().ImageStatusByName(s.config.SystemContext, name)
+		status, err := s.StorageImageServer().ImageStatusByName(name)
 		if err != nil {
 			if errors.Is(err, istorage.ErrNoSuchImage) {
 				log.Debugf(ctx, "Can't find %s", name)

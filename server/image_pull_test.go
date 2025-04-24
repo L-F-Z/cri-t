@@ -30,8 +30,7 @@ var _ = t.Describe("ImagePull", func() {
 		It("should succeed with pull", func() {
 			// Given
 			gomock.InOrder(
-				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName(
-					gomock.Any(), "image").
+				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("image").
 					Return([]storage.RegistryImageReference{imageCandidate}, nil),
 				imageServerMock.EXPECT().PullImage(gomock.Any(), imageCandidate, gomock.Any()).
 					Return(canonicalImageCandidate, nil),
@@ -51,8 +50,7 @@ var _ = t.Describe("ImagePull", func() {
 		It("should fail when image pull errors", func() {
 			// Given
 			gomock.InOrder(
-				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName(
-					gomock.Any(), "image").
+				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("image").
 					Return([]storage.RegistryImageReference{imageCandidate}, nil),
 				imageServerMock.EXPECT().PullImage(gomock.Any(), imageCandidate, gomock.Any()).
 					Return(storage.RegistryImageReference{}, t.TestError),
@@ -72,8 +70,7 @@ var _ = t.Describe("ImagePull", func() {
 		It("should fail when resolve names errors", func() {
 			// Given
 			gomock.InOrder(
-				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName(
-					gomock.Any(), "").
+				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("").
 					Return(nil, t.TestError),
 			)
 			// When
