@@ -20,7 +20,6 @@ import (
 	"golang.org/x/sys/unix"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/cri-o/cri-o/internal/config/seccomp/seccompociartifact"
 	"github.com/cri-o/cri-o/internal/log"
 )
 
@@ -240,24 +239,6 @@ func (c *Config) Setup(
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 	log.Debugf(ctx, "Setup seccomp from profile field: %+v", profileField)
-
-	// Specifically set profile fields always have a higher priority than OCI artifact annotations
-	// TODO(sgrunert): allow merging OCI artifact profiles with security context ones.
-	if profileField == nil || profileField.ProfileType == types.SecurityProfile_Unconfined {
-		ociArtifactProfile, err := seccompociartifact.New().TryPull(ctx, sys, containerName, sandboxAnnotations, imageAnnotations)
-		if err != nil {
-			return nil, "", fmt.Errorf("try to pull OCI artifact seccomp profile: %w", err)
-		}
-
-		if ociArtifactProfile != nil {
-			notifier, err := c.applyProfileFromBytes(ctx, ociArtifactProfile, msgChan, containerID, sandboxAnnotations, specGenerator)
-			if err != nil {
-				return nil, "", fmt.Errorf("apply profile from bytes: %w", err)
-			}
-
-			return notifier, "", nil
-		}
-	}
 
 	// running w/o seccomp, aka unconfined
 	if profileField == nil {

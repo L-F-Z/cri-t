@@ -516,13 +516,6 @@ mock-ocicni-types: ${MOCKGEN}
 		-destination ${MOCK_PATH}/ocicni/types.go \
 		github.com/cri-o/ocicni/pkg/ocicni CNIPlugin
 
-.PHONY: mock-seccompociartifact-types
-mock-seccompociartifact-types: ${MOCKGEN}
-	${BUILD_BIN_PATH}/mockgen \
-		-package seccompociartifactmock \
-		-destination ${MOCK_PATH}/seccompociartifact/seccompociartifact.go \
-		github.com/cri-o/cri-o/internal/config/seccomp/seccompociartifact Impl
-
 .PHONY: mock-ociartifact-types
 mock-ociartifact-types: ${MOCKGEN}
 	${BUILD_BIN_PATH}/mockgen \
