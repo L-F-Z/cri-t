@@ -10,7 +10,6 @@ import (
 	"time"
 
 	imageTypes "github.com/containers/image/v5/types"
-	encconfig "github.com/containers/ocicrypt/config"
 	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/opencontainers/go-digest"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -100,11 +99,6 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 
-	decryptConfig, err := getDecryptionKeys(s.config.DecryptionKeysPath)
-	if err != nil {
-		return storage.RegistryImageReference{}, err
-	}
-
 	cgroup := ""
 	if s.config.SeparatePullCgroup != "" {
 		if !s.config.CgroupManager().IsSystemd() {
@@ -128,7 +122,7 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 	// and they all fail, this error value should be overwritten by a real failure.
 	lastErr := errors.New("internal error: pullImage failed but reported no error reason")
 	for _, remoteCandidateName := range remoteCandidates {
-		repoDigest, err := s.pullImageCandidate(ctx, remoteCandidateName, decryptConfig, cgroup)
+		repoDigest, err := s.pullImageCandidate(ctx, remoteCandidateName, cgroup)
 		if err == nil {
 			// Update metric for successful image pulls
 			metrics.Instance().MetricImagePullsSuccessesInc(remoteCandidateName)
@@ -139,7 +133,7 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 	return storage.RegistryImageReference{}, lastErr
 }
 
-func (s *Server) pullImageCandidate(ctx context.Context, remoteCandidateName storage.RegistryImageReference, decryptConfig *encconfig.DecryptConfig, cgroup string) (storage.RegistryImageReference, error) {
+func (s *Server) pullImageCandidate(ctx context.Context, remoteCandidateName storage.RegistryImageReference, cgroup string) (storage.RegistryImageReference, error) {
 	// Collect pull progress metrics
 	progress := make(chan imageTypes.ProgressProperties)
 	defer close(progress)
@@ -153,7 +147,6 @@ func (s *Server) pullImageCandidate(ctx context.Context, remoteCandidateName sto
 	go consumeImagePullProgress(ctx, cancel, s.Config().PullProgressTimeout, progress, remoteCandidateName)
 
 	repoDigest, err := s.StorageImageServer().PullImage(pullCtx, remoteCandidateName, &storage.ImageCopyOptions{
-		OciDecryptConfig: decryptConfig,
 		ProgressInterval: s.Config().PullProgressTimeout / 10,
 		Progress:         progress,
 		CgroupPull: storage.CgroupPullConfiguration{

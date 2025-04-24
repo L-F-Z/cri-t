@@ -340,9 +340,6 @@ type RuntimeConfig struct {
 	// The name is matched against the Runtimes map below.
 	DefaultRuntime string `toml:"default_runtime"`
 
-	// DecryptionKeysPath is the path where keys for image decryption are stored.
-	DecryptionKeysPath string `toml:"decryption_keys_path"`
-
 	// Conmon is the path to conmon binary, used for managing the runtime.
 	// This option is currently deprecated, and will be replaced with RuntimeHandler.MonitorConfig.Path.
 	Conmon string `toml:"conmon"`
@@ -866,9 +863,8 @@ func DefaultConfig() (*Config, error) {
 			GRPCMaxRecvMsgSize: defaultGRPCMaxMsgSize,
 		},
 		RuntimeConfig: RuntimeConfig{
-			AllowedDevices:     []string{"/dev/fuse", "/dev/net/tun"},
-			DecryptionKeysPath: "/etc/crio/keys/",
-			DefaultRuntime:     DefaultRuntime,
+			AllowedDevices: []string{"/dev/fuse", "/dev/net/tun"},
+			DefaultRuntime: DefaultRuntime,
 			Runtimes: Runtimes{
 				DefaultRuntime: defaultRuntimeHandler(),
 			},

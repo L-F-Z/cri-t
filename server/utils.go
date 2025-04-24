@@ -2,19 +2,13 @@ package server
 
 import (
 	"context"
-	b64 "encoding/base64"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
-	encconfig "github.com/containers/ocicrypt/config"
-	cryptUtils "github.com/containers/ocicrypt/utils"
 	"github.com/containers/storage/pkg/mount"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sirupsen/logrus"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/cri-o/cri-o/internal/log"
@@ -79,51 +73,6 @@ func mergeEnvs(imageConfig *v1.Image, kubeEnvs []*types.KeyValue) []string {
 		}
 	}
 	return envs
-}
-
-// getDecryptionKeys reads the keys from the given directory.
-func getDecryptionKeys(keysPath string) (*encconfig.DecryptConfig, error) {
-	if _, err := os.Stat(keysPath); os.IsNotExist(err) {
-		logrus.Debugf("Skipping non-existing decryption_keys_path: %s", keysPath)
-		return &encconfig.DecryptConfig{}, nil
-	}
-
-	base64Keys := []string{}
-	walkFn := func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		// Handle symlinks
-		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
-			return errors.New("symbolic links not supported in decryption keys paths")
-		}
-
-		privateKey, err := os.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("read private key file: %w", err)
-		}
-
-		sEnc := b64.StdEncoding.EncodeToString(privateKey)
-		base64Keys = append(base64Keys, sEnc)
-
-		return nil
-	}
-
-	if err := filepath.Walk(keysPath, walkFn); err != nil {
-		return nil, err
-	}
-
-	sortedDc, err := cryptUtils.SortDecryptionKeys(strings.Join(base64Keys, ","))
-	if err != nil {
-		return nil, err
-	}
-
-	return encconfig.InitDecryption(sortedDc).DecryptConfig, nil
 }
 
 func getSourceMount(source string, mountinfos []*mount.Info) (path, optional string, _ error) {

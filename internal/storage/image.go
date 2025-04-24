@@ -20,7 +20,6 @@ import (
 	istorage "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
-	encconfig "github.com/containers/ocicrypt/config"
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/reexec"
 	json "github.com/json-iterator/go"
@@ -112,7 +111,6 @@ type CgroupPullConfiguration struct {
 // subset of copy.Options that is supported by reexec.
 // WARNING: All ofImageCopyOptions must be JSON-representable because it is included in pullImageArgs.
 type ImageCopyOptions struct {
-	OciDecryptConfig *encconfig.DecryptConfig
 	ProgressInterval time.Duration
 	Progress         chan types.ProgressProperties `json:"-"`
 	CgroupPull       CgroupPullConfiguration
@@ -673,7 +671,6 @@ func pullImageImplementation(ctx context.Context, lookup *imageLookupService, st
 	}
 
 	manifestBytes, err := copy.Image(ctx, nil, destRef, srcRef, &copy.Options{
-		OciDecryptConfig: options.OciDecryptConfig,
 		ProgressInterval: options.ProgressInterval,
 		Progress:         options.Progress,
 	})

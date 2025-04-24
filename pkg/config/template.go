@@ -222,11 +222,6 @@ func initCrioTemplateConfig(c *Config) ([]*templateConfigValue, error) {
 			isDefaultValue: simpleEqual(dc.NoPivot, c.NoPivot),
 		},
 		{
-			templateString: templateStringCrioRuntimeDecryptionKeysPath,
-			group:          crioRuntimeConfig,
-			isDefaultValue: simpleEqual(dc.DecryptionKeysPath, c.DecryptionKeysPath),
-		},
-		{
 			templateString: templateStringCrioRuntimeConmon,
 			group:          crioRuntimeConfig,
 			isDefaultValue: simpleEqual(dc.Conmon, c.Conmon),
@@ -842,12 +837,6 @@ const templateStringCrioRuntimeDefaultUlimits = `# A list of ulimits to be set i
 
 const templateStringCrioRuntimeNoPivot = `# If true, the runtime will not use pivot_root, but instead use MS_MOVE.
 {{ $.Comment }}no_pivot = {{ .NoPivot }}
-
-`
-
-const templateStringCrioRuntimeDecryptionKeysPath = `# decryption_keys_path is the path where the keys required for
-# image decryption are stored. This option supports live configuration reload.
-{{ $.Comment }}decryption_keys_path = "{{ .DecryptionKeysPath }}"
 
 `
 

@@ -54,7 +54,6 @@ func (c *Config) Reload(ctx context.Context) error {
 		return err
 	}
 	c.ReloadPinnedImages(newConfig)
-	c.ReloadDecryptionKeyConfig(newConfig)
 	if err := c.ReloadSeccompProfile(newConfig); err != nil {
 		return err
 	}
@@ -162,15 +161,6 @@ func (c *Config) ReloadPinnedImages(newConfig *Config) {
 	logConfig("pinned_images", strings.Join(pinnedImages, ","))
 
 	c.PinnedImages = pinnedImages
-}
-
-// ReloadDecryptionKeyConfig updates the DecryptionKeysPath with the provided
-// `newConfig`.
-func (c *Config) ReloadDecryptionKeyConfig(newConfig *Config) {
-	if c.DecryptionKeysPath != newConfig.DecryptionKeysPath {
-		logConfig("decryption_keys_path", newConfig.DecryptionKeysPath)
-		c.DecryptionKeysPath = newConfig.DecryptionKeysPath
-	}
 }
 
 // ReloadSeccompProfile reloads the seccomp profile from the new config if
