@@ -502,11 +502,6 @@ func initCrioTemplateConfig(c *Config) ([]*templateConfigValue, error) {
 			isDefaultValue: slices.Equal(dc.PinnedImages, c.PinnedImages),
 		},
 		{
-			templateString: templateStringCrioImageInsecureRegistries,
-			group:          crioImageConfig,
-			isDefaultValue: slices.Equal(dc.InsecureRegistries, c.InsecureRegistries),
-		},
-		{
 			templateString: templateStringCrioImageImageVolumes,
 			group:          crioImageConfig,
 			isDefaultValue: simpleEqual(dc.ImageVolumes, c.ImageVolumes),
@@ -515,11 +510,6 @@ func initCrioTemplateConfig(c *Config) ([]*templateConfigValue, error) {
 			templateString: templateStringCrioImageBigFilesTemporaryDir,
 			group:          crioImageConfig,
 			isDefaultValue: simpleEqual(dc.BigFilesTemporaryDir, c.BigFilesTemporaryDir),
-		},
-		{
-			templateString: templateStringCrioImageAutoReloadRegistries,
-			group:          crioImageConfig,
-			isDefaultValue: simpleEqual(dc.AutoReloadRegistries, c.AutoReloadRegistries),
 		},
 		{
 			templateString: templateStringCrioImagePullProgressTimeout,
@@ -1408,14 +1398,6 @@ const templateStringCrioImagePinnedImages = `# List of images to be excluded fro
 
 `
 
-const templateStringCrioImageInsecureRegistries = `# List of registries to skip TLS verification for pulling images. Please
-# consider configuring the registries via /etc/containers/registries.conf before
-# changing them here.
-{{ $.Comment }}insecure_registries = [
-{{ range $opt := .InsecureRegistries }}{{ $.Comment }}{{ printf "\t%q,\n" $opt }}{{ end }}{{ $.Comment }}]
-
-`
-
 const templateStringCrioImageImageVolumes = `# Controls how image volumes are handled. The valid values are mkdir, bind and
 # ignore; the latter will ignore volumes entirely.
 {{ $.Comment }}image_volumes = "{{ .ImageVolumes }}"
@@ -1424,12 +1406,6 @@ const templateStringCrioImageImageVolumes = `# Controls how image volumes are ha
 
 const templateStringCrioImageBigFilesTemporaryDir = `# Temporary directory to use for storing big files
 {{ $.Comment }}big_files_temporary_dir = "{{ .BigFilesTemporaryDir }}"
-
-`
-
-const templateStringCrioImageAutoReloadRegistries = `# If true, CRI-O will automatically reload the mirror registry when
-# there is an update to the 'registries.conf.d' directory. Default value is set to 'false'.
-{{ $.Comment }}auto_reload_registries = {{ .AutoReloadRegistries }}
 
 `
 

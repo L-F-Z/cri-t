@@ -16,15 +16,6 @@ function setup() {
 		>> "$CONTAINER_REGISTRIES_CONF_DIR/01-registry.conf"
 }
 
-function drop_in_for_auto_reload_registries() {
-	cat << EOF > "$CRIO_CONFIG_DIR/00-auto-reload-registries.conf"
-[crio.image]
-auto_reload_registries = true
-[crio.runtime]
-log_level = "debug"
-EOF
-}
-
 function teardown() {
 	cleanup_test
 }

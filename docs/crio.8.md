@@ -16,7 +16,6 @@ crio
 [--additional-devices]=[value]
 [--allowed-devices]=[value]
 [--apparmor-profile]=[value]
-[--auto-reload-registries]
 [--big-files-temporary-dir]=[value]
 [--bind-mount-prefix]=[value]
 [--blockio-config-file]=[value]
@@ -63,7 +62,6 @@ crio
 [--imagestore]=[value]
 [--included-pod-metrics]=[value]
 [--infra-ctr-cpuset]=[value]
-[--insecure-registry]=[value]
 [--internal-repair]
 [--internal-wipe]
 [--irqbalance-config-file]=[value]
@@ -163,8 +161,6 @@ crio [GLOBAL OPTIONS] command [COMMAND OPTIONS] [ARGUMENTS...]
 **--allowed-devices**="": Devices a user is allowed to specify with the "io.kubernetes.cri-o.Devices" allowed annotation. (default: "/dev/fuse", "/dev/net/tun")
 
 **--apparmor-profile**="": Name of the apparmor profile to be used as the runtime's default. This only takes effect if the user does not specify a profile via the Kubernetes Pod's metadata annotation. (default: "crio-default")
-
-**--auto-reload-registries**: If true, CRI-O will automatically reload the mirror registry when there is an update to the 'registries.conf.d' directory. Default value is set to 'false'.
 
 **--big-files-temporary-dir**="": Path to the temporary directory to use for storing big files, used to store image blobs and data streams related to containers image management.
 
@@ -289,17 +285,6 @@ crio [GLOBAL OPTIONS] command [COMMAND OPTIONS] [ARGUMENTS...]
 **--included-pod-metrics**="": A list of pod metrics to include. Specify the names of the metrics to include in this list.
 
 **--infra-ctr-cpuset**="": CPU set to run infra containers, if not specified CRI-O will use all online CPUs to run infra containers.
-
-**--insecure-registry**="": Enable insecure registry communication, i.e., enable un-encrypted and/or untrusted communication.
-    1. List of insecure registries can contain an element with CIDR notation to
-       specify a whole subnet.
-    2. Insecure registries accept HTTP or accept HTTPS with certificates from
-       unknown CAs.
-    3. Enabling '--insecure-registry' is useful when running a local registry.
-       However, because its use creates security vulnerabilities, **it should ONLY
-       be enabled for testing purposes**. For increased security, users should add
-       their CA to their system's list of trusted CAs instead of using
-       '--insecure-registry'.
 
 **--internal-repair**: If true, CRI-O will check if the container and image storage was corrupted after a sudden restart, and attempt to repair the storage if it was.
 

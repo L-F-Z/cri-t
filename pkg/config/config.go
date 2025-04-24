@@ -534,17 +534,10 @@ type ImageConfig struct {
 	// Pinned images will remain in the container runtime's storage until
 	// they are manually removed. Default value: empty list (no images pinned)
 	PinnedImages []string `toml:"pinned_images"`
-	// InsecureRegistries is a list of registries that must be contacted w/o
-	// TLS verification.
-	InsecureRegistries []string `toml:"insecure_registries"`
 	// ImageVolumes controls how volumes specified in image config are handled
 	ImageVolumes ImageVolumesType `toml:"image_volumes"`
 	// Temporary directory for big files
 	BigFilesTemporaryDir string `toml:"big_files_temporary_dir"`
-	// AutoReloadRegistries if set to true, will automatically
-	// reload the mirror registry when there is an update to the
-	// 'registries.conf.d' directory.
-	AutoReloadRegistries bool `toml:"auto_reload_registries"`
 	// PullProgressTimeout is the timeout for an image pull to make progress
 	// until the pull operation gets canceled. This value will be also used for
 	// calculating the pull progress interval to pullProgressTimeout / 10.

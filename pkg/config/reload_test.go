@@ -213,17 +213,6 @@ var _ = t.Describe("Config", func() {
 		})
 	})
 
-	t.Describe("ReloadRegistries", func() {
-		It("should succeed to reload registries", func() {
-			// Given
-			// When
-			err := sut.ReloadRegistries()
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-		})
-	})
-
 	t.Describe("ReloadSeccompProfile", func() {
 		It("should succeed without any config change", func() {
 			// Given

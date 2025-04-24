@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/containers/image/v5/pkg/sysregistriesv2"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sirupsen/logrus"
@@ -55,9 +54,6 @@ func (c *Config) Reload(ctx context.Context) error {
 		return err
 	}
 	c.ReloadPinnedImages(newConfig)
-	if err := c.ReloadRegistries(); err != nil {
-		return err
-	}
 	c.ReloadDecryptionKeyConfig(newConfig)
 	if err := c.ReloadSeccompProfile(newConfig); err != nil {
 		return err
@@ -166,21 +162,6 @@ func (c *Config) ReloadPinnedImages(newConfig *Config) {
 	logConfig("pinned_images", strings.Join(pinnedImages, ","))
 
 	c.PinnedImages = pinnedImages
-}
-
-// ReloadRegistries reloads the registry configuration from the Configs
-// `SystemContext`. The method errors in case of any update failure.
-func (c *Config) ReloadRegistries() error {
-	registries, err := sysregistriesv2.TryUpdatingCache(nil)
-	if err != nil {
-		return fmt.Errorf(
-			"system registries reload failed: %s: %w",
-			sysregistriesv2.ConfigPath(nil),
-			err,
-		)
-	}
-	logrus.Infof("Applied new registry configuration: %+v", registries)
-	return nil
 }
 
 // ReloadDecryptionKeyConfig updates the DecryptionKeysPath with the provided

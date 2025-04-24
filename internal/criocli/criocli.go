@@ -90,9 +90,6 @@ func mergeConfig(config *libconfig.Config, ctx *cli.Context) error {
 	if ctx.IsSet("storage-opt") {
 		config.StorageOptions = StringSliceTrySplit(ctx, "storage-opt")
 	}
-	if ctx.IsSet("insecure-registry") {
-		config.InsecureRegistries = StringSliceTrySplit(ctx, "insecure-registry")
-	}
 	if ctx.IsSet("default-transport") {
 		config.DefaultTransport = ctx.String("default-transport")
 	}
@@ -393,9 +390,6 @@ func mergeConfig(config *libconfig.Config, ctx *cli.Context) error {
 	if ctx.IsSet("big-files-temporary-dir") {
 		config.BigFilesTemporaryDir = ctx.String("big-files-temporary-dir")
 	}
-	if ctx.IsSet("auto-reload-registries") {
-		config.AutoReloadRegistries = ctx.Bool("auto-reload-registries")
-	}
 	if ctx.IsSet("pull-progress-timeout") {
 		config.PullProgressTimeout = ctx.Duration("pull-progress-timeout")
 	}
@@ -589,21 +583,6 @@ func getCrioFlags(defConf *libconfig.Config) []cli.Flag {
 			Value:   cli.NewStringSlice(defConf.StorageOptions...),
 			Usage:   "OCI storage driver option.",
 			EnvVars: []string{"CONTAINER_STORAGE_OPT"},
-		},
-		&cli.StringSliceFlag{
-			Name:  "insecure-registry",
-			Value: cli.NewStringSlice(defConf.InsecureRegistries...),
-			Usage: "Enable insecure registry communication, i.e., enable un-encrypted and/or untrusted communication." + `
-    1. List of insecure registries can contain an element with CIDR notation to
-       specify a whole subnet.
-    2. Insecure registries accept HTTP or accept HTTPS with certificates from
-       unknown CAs.
-    3. Enabling '--insecure-registry' is useful when running a local registry.
-       However, because its use creates security vulnerabilities, **it should ONLY
-       be enabled for testing purposes**. For increased security, users should add
-       their CA to their system's list of trusted CAs instead of using
-       '--insecure-registry'.`,
-			EnvVars: []string{"CONTAINER_INSECURE_REGISTRY"},
 		},
 		&cli.StringFlag{
 			Name:    "default-transport",
@@ -899,12 +878,6 @@ func getCrioFlags(defConf *libconfig.Config) []cli.Flag {
 			Usage:   `Path to the temporary directory to use for storing big files, used to store image blobs and data streams related to containers image management.`,
 			EnvVars: []string{"CONTAINER_BIG_FILES_TEMPORARY_DIR"},
 			Value:   defConf.BigFilesTemporaryDir,
-		},
-		&cli.BoolFlag{
-			Name:    "auto-reload-registries",
-			Usage:   "If true, CRI-O will automatically reload the mirror registry when there is an update to the 'registries.conf.d' directory. Default value is set to 'false'.",
-			EnvVars: []string{"AUTO_RELOAD_REGISTRIES"},
-			Value:   defConf.AutoReloadRegistries,
 		},
 		&cli.DurationFlag{
 			Name:    "pull-progress-timeout",

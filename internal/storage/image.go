@@ -846,23 +846,6 @@ func GetImageService(ctx context.Context, store storage.Store, storageTransport 
 		regexForPinnedImages: CompileRegexpsForPinnedImages(serverConfig.PinnedImages),
 	}
 
-	serverConfig.InsecureRegistries = append(serverConfig.InsecureRegistries, "127.0.0.0/8")
-	// Split --insecure-registry into CIDR and registry-specific settings.
-	for _, r := range serverConfig.InsecureRegistries {
-		// Check if CIDR was passed to --insecure-registry
-		_, ipnet, err := net.ParseCIDR(r)
-		if err == nil {
-			// Valid CIDR.
-			is.lookup.InsecureRegistryCIDRs = append(is.lookup.InsecureRegistryCIDRs, ipnet)
-		} else {
-			// Assume `host:port` if not CIDR.
-			is.lookup.IndexConfigs[r] = &indexInfo{
-				name:   r,
-				secure: false,
-			}
-		}
-	}
-
 	return is, nil
 }
 

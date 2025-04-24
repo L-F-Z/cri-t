@@ -57,8 +57,7 @@ var _ = t.Describe("Image", func() {
 		var err error
 		config := &config.Config{
 			ImageConfig: config.ImageConfig{
-				DefaultTransport:   "docker://",
-				InsecureRegistries: []string{},
+				DefaultTransport: "docker://",
 			},
 		}
 
@@ -90,8 +89,7 @@ var _ = t.Describe("Image", func() {
 			// When
 			config := &config.Config{
 				ImageConfig: config.ImageConfig{
-					DefaultTransport:   "",
-					InsecureRegistries: []string{},
+					DefaultTransport: "",
 				},
 			}
 			imageService, err := storage.GetImageService(
@@ -258,8 +256,7 @@ var _ = t.Describe("Image", func() {
 			gomock.InOrder()
 			config := &config.Config{
 				ImageConfig: config.ImageConfig{
-					DefaultTransport:   "",
-					InsecureRegistries: []string{},
+					DefaultTransport: "",
 				},
 			}
 			// Create an empty file for the registries config path
