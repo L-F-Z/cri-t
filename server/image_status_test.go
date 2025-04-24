@@ -2,8 +2,8 @@ package server_test
 
 import (
 	"context"
+	"errors"
 
-	istorage "github.com/containers/image/v5/storage"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
@@ -122,7 +122,7 @@ var _ = t.Describe("ImageStatus", func() {
 				imageServerMock.EXPECT().CandidatesForPotentiallyShortImageName("image").
 					Return([]storage.RegistryImageReference{imageCandidate}, nil),
 				imageServerMock.EXPECT().ImageStatusByName(imageCandidate).
-					Return(nil, istorage.ErrNoSuchImage),
+					Return(nil, errors.New("identifier is not an image")),
 			)
 
 			// When

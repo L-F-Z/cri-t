@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	istorage "github.com/containers/image/v5/storage"
 	json "github.com/json-iterator/go"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -77,7 +76,7 @@ func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (
 	if id := s.StorageImageServer().HeuristicallyTryResolvingStringAsIDPrefix(spec.Image); id != nil {
 		status, err := s.StorageImageServer().ImageStatusByID(*id)
 		if err != nil {
-			if errors.Is(err, istorage.ErrNoSuchImage) {
+			if errors.Is(err, errors.New("identifier is not an image")) {
 				log.Infof(ctx, "Image %s not found", spec.Image)
 				return nil, nil
 			}
@@ -95,7 +94,7 @@ func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (
 	for _, name := range potentialMatches {
 		status, err := s.StorageImageServer().ImageStatusByName(name)
 		if err != nil {
-			if errors.Is(err, istorage.ErrNoSuchImage) {
+			if errors.Is(err, errors.New("identifier is not an image")) {
 				log.Debugf(ctx, "Can't find %s", name)
 				continue
 			}
