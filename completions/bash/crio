@@ -118,8 +118,6 @@ h
 --selinux
 --separate-pull-cgroup
 --shared-cpuset
---signature-policy
---signature-policy-dir
 --stats-collection-period
 --storage-driver
 --storage-opt

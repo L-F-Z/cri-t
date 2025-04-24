@@ -5,8 +5,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -28,7 +26,6 @@ import (
 func (s *Server) PullImage(ctx context.Context, req *types.PullImageRequest) (*types.PullImageResponse, error) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	// TODO: what else do we need here? (Signatures when the story isn't just pulling from docker://)
 	var err error
 	image := ""
 	img := req.Image
@@ -106,7 +103,7 @@ func (s *Server) PullImage(ctx context.Context, req *types.PullImageRequest) (*t
 			return nil, fmt.Errorf("%w: %w", crierrors.ErrRegistryUnavailable, pullOp.err)
 		}
 
-		return nil, storage.WrapSignatureCRIErrorIfNeeded(pullOp.err)
+		return nil, pullOp.err
 	}
 
 	log.Infof(ctx, "Pulled image: %v", pullOp.imageRef)
@@ -127,22 +124,12 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 	if err != nil {
 		return storage.RegistryImageReference{}, fmt.Errorf("get context for namespace: %w", err)
 	}
-	log.Debugf(ctx, "Using pull policy path for image %s: %q", pullArgs.image, sourceCtx.SignaturePolicyPath)
+	log.Debugf(ctx, "Using pull policy path for image %s", pullArgs.image)
 
 	sourceCtx.DockerLogMirrorChoice = true // Add info level log of the pull source
 	if pullArgs.credentials.Username != "" {
 		sourceCtx.DockerAuthConfig = &pullArgs.credentials
 	}
-
-	if pullArgs.namespace != "" {
-		policyPath := filepath.Join(s.config.SignaturePolicyDir, pullArgs.namespace+".json")
-		if _, err := os.Stat(policyPath); err == nil {
-			sourceCtx.SignaturePolicyPath = policyPath
-		} else if !os.IsNotExist(err) {
-			return storage.RegistryImageReference{}, fmt.Errorf("read policy path %s: %w", policyPath, err)
-		}
-	}
-	log.Debugf(ctx, "Using pull policy path for image %s: %s", pullArgs.image, sourceCtx.SignaturePolicyPath)
 
 	decryptConfig, err := getDecryptionKeys(s.config.DecryptionKeysPath)
 	if err != nil {
@@ -187,16 +174,6 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (storag
 // copy of the servers system context.
 func (s *Server) contextForNamespace(namespace string) (imageTypes.SystemContext, error) {
 	ctx := *s.config.SystemContext // A shallow copy we can modify
-
-	if namespace != "" {
-		policyPath := filepath.Join(s.config.SignaturePolicyDir, namespace+".json")
-		if _, err := os.Stat(policyPath); err == nil {
-			ctx.SignaturePolicyPath = policyPath
-		} else if !os.IsNotExist(err) {
-			return ctx, fmt.Errorf("read policy path %s: %w", policyPath, err)
-		}
-	}
-
 	return ctx, nil
 }
 

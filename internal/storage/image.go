@@ -15,14 +15,9 @@ import (
 	"time"
 
 	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/docker/reference"
-	cimage "github.com/containers/image/v5/image"
-	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/pkg/shortnames"
-	"github.com/containers/image/v5/signature"
 	istorage "github.com/containers/image/v5/storage"
-	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	encconfig "github.com/containers/ocicrypt/config"
@@ -33,9 +28,7 @@ import (
 	digest "github.com/opencontainers/go-digest"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
-	crierrors "k8s.io/cri-api/pkg/errors"
 
-	"github.com/cri-o/cri-o/internal/log"
 	"github.com/cri-o/cri-o/internal/storage/references"
 	"github.com/cri-o/cri-o/pkg/config"
 )
@@ -172,15 +165,6 @@ type ImageServer interface {
 
 	// UpdatePinnedImagesList updates pinned and pause images list in imageService.
 	UpdatePinnedImagesList(imageList []string)
-
-	// IsRunningImageAllowed verifies if running of the container image is allowed.
-	//
-	// Arguments:
-	// - ctx: The context for controlling the function's execution
-	// - systemContext: server's system context for the given namespace, notably it might have a customized SignaturePolicyPath.
-	// - userSpecifiedImage: a RegistryImageReference that expresses users’ _intended_ image.
-	// - imageID: A StorageImageID of the image
-	IsRunningImageAllowed(ctx context.Context, systemContext *types.SystemContext, userSpecifiedImage RegistryImageReference, imageID StorageImageID) error
 }
 
 func parseImageNames(image *storage.Image) (someName *RegistryImageReference, tags []reference.NamedTagged, digests []reference.Canonical, err error) {
@@ -467,107 +451,6 @@ func (svc *imageService) imageStatus(systemContext *types.SystemContext, unstabl
 	return &result, nil
 }
 
-func (svc *imageService) IsRunningImageAllowed(ctx context.Context, systemContext *types.SystemContext, userSpecifiedImage RegistryImageReference, imageID StorageImageID) error {
-	policy, err := signature.DefaultPolicy(systemContext)
-	if err != nil {
-		return fmt.Errorf("get default policy: %w", err)
-	}
-
-	policyContext, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return fmt.Errorf("create policy context: %w", err)
-	}
-
-	defer func() {
-		if err := policyContext.Destroy(); err != nil {
-			log.Errorf(ctx, "Error destroying policy: %+v", err)
-		}
-	}()
-
-	if err := svc.checkSignature(ctx, systemContext, policyContext, userSpecifiedImage, imageID); err != nil {
-		return fmt.Errorf("checking signature of %q: %w", userSpecifiedImage, err)
-	}
-
-	log.Debugf(ctx, "Is allowed to run config image %s (policy path: %q)", userSpecifiedImage, systemContext.SignaturePolicyPath)
-
-	return nil
-}
-
-func (svc *imageService) checkSignature(ctx context.Context, sys *types.SystemContext, policyContext *signature.PolicyContext, userSpecifiedImage RegistryImageReference, imageID StorageImageID) error {
-	userSpecifiedImageRef, err := docker.NewReference(userSpecifiedImage.Raw())
-	if err != nil {
-		return fmt.Errorf("creating docker:// reference for %q: %w", userSpecifiedImage.Raw().String(), err)
-	}
-
-	// imageID is authoritative, but it may be a deduplicated image with several manifests,
-	// and only one of them might be signed with the signatures required by policy.
-	//
-	// Here we could, possibly:
-	// - if userSpecifiedImage is a repo@digest, resolve up that image, CHECK THAT IT MATCHES storageID, and use that
-	//   reference (to use certainly the right digest)
-	// - if userSpecifiedImage is a repo:tag, resolve up that image, CHECK THAT IT MATCHES storageID, and use that
-	//   reference (assuming some future c/storage that can map repo:tag to the right digest)
-	// Failing that (e.g. if a subsequent pull moved the tag, or if the image was untagged), try with the raw imageID.
-	storageRef, err := imageID.imageRef(svc)
-	if err != nil {
-		return fmt.Errorf("creating containers-storage: reference for %v: %w", storageRef, err)
-	}
-	log.Debugf(ctx, "Created storageRef = %q", transports.ImageName(storageRef))
-
-	storageSource, err := storageRef.NewImageSource(ctx, sys)
-	if err != nil {
-		return fmt.Errorf("creating image source for local store image: %w", err)
-	}
-	defer storageSource.Close()
-
-	unparsedToplevel := cimage.UnparsedInstance(storageSource, nil)
-	topManifest, topMIMEType, err := unparsedToplevel.Manifest(ctx)
-	if err != nil {
-		return fmt.Errorf("get top level manifest: %w", err)
-	}
-
-	unparsedInstance := unparsedToplevel
-	if manifest.MIMETypeIsMultiImage(topMIMEType) {
-		manifestList, err := manifest.ListFromBlob(topManifest, topMIMEType)
-		if err != nil {
-			return fmt.Errorf("parsing list manifest: %w", err)
-		}
-
-		instanceDigest, err := manifestList.ChooseInstance(sys)
-		if err != nil {
-			return fmt.Errorf("choosing instance: %w", err)
-		}
-
-		unparsedInstance = cimage.UnparsedInstance(storageSource, &instanceDigest)
-	}
-
-	mixedUnparsedInstance := cimage.UnparsedInstanceWithReference(unparsedInstance, userSpecifiedImageRef)
-
-	allowed, err := policyContext.IsRunningImageAllowed(ctx, mixedUnparsedInstance)
-	if err != nil {
-		return fmt.Errorf("verifying signatures: %w", WrapSignatureCRIErrorIfNeeded(err))
-	}
-	if !allowed {
-		panic("Internal inconsistency: IsRunningImageAllowed returned !allowed and no error when checking image signature")
-	}
-
-	return nil
-}
-
-// WrapSignatureCRIErrorIfNeeded wraps the CRI ErrSignatureValidationFailed if
-// the provided err qualifies for that. If not, then it returns err.
-func WrapSignatureCRIErrorIfNeeded(err error) error {
-	var (
-		policyErr    signature.PolicyRequirementError
-		signatureErr signature.InvalidSignatureError
-	)
-	if errors.As(err, &policyErr) || errors.As(err, &signatureErr) {
-		return fmt.Errorf("%w: %w", crierrors.ErrSignatureValidationFailed, err)
-	}
-
-	return err
-}
-
 func imageSize(img types.Image) *uint64 {
 	if sum, err := img.Size(); err == nil {
 		usum := uint64(sum)
@@ -798,16 +681,7 @@ func pullImageImplementation(ctx context.Context, lookup *imageLookupService, st
 		return RegistryImageReference{}, err
 	}
 
-	policy, err := signature.DefaultPolicy(options.SourceCtx)
-	if err != nil {
-		return RegistryImageReference{}, err
-	}
-	policyContext, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return RegistryImageReference{}, err
-	}
-
-	manifestBytes, err := copy.Image(ctx, policyContext, destRef, srcRef, &copy.Options{
+	manifestBytes, err := copy.Image(ctx, nil, destRef, srcRef, &copy.Options{
 		SourceCtx:        &srcSystemContext,
 		DestinationCtx:   options.DestinationCtx,
 		OciDecryptConfig: options.OciDecryptConfig,

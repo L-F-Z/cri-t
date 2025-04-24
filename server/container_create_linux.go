@@ -37,7 +37,6 @@ import (
 	oci "github.com/cri-o/cri-o/internal/oci"
 	"github.com/cri-o/cri-o/internal/runtimehandlerhooks"
 	"github.com/cri-o/cri-o/internal/storage"
-	"github.com/cri-o/cri-o/internal/storage/references"
 	crioann "github.com/cri-o/cri-o/pkg/annotations"
 )
 
@@ -199,39 +198,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	// == Image lookup done.
 	// == NEVER USE userRequestedImage (or even someNameOfTheImage) for anything but diagnostic logging past this point; it might
 	// resolve to a different image.
-
-	systemCtx, err := s.contextForNamespace(sb.Metadata().Namespace)
-	if err != nil {
-		return nil, fmt.Errorf("get context for namespace: %w", err)
-	}
-
-	// WARNING: This hard-codes an assumption that SignaturePolicyPath set specifically for the namespace is never less restrictive
-	// than the default system-wide policy, i.e. that if an image is successfully pulled, it always conforms to the system-wide policy.
-	if systemCtx.SignaturePolicyPath != "" {
-		// userSpecifiedImage is the input user provided in a Pod spec,
-		// and captures the intent of the user; from that,
-		// the signature policy is used to determine the relevant roots of trust and other requirements.
-		userSpecifiedImage := ctr.Config().GetImage().UserSpecifiedImage
-
-		// This will likely fail in a container restore case.
-		// This is okay; in part because container restores are an alpha feature,
-		// and it is meaningless to try to verify an image that isn't even an image
-		// (like a checkpointed file is).
-		if userSpecifiedImage == "" {
-			return nil, errors.New("user specified image not specified, cannot verify image signature")
-		}
-
-		var userSpecifiedImageRef references.RegistryImageReference
-
-		userSpecifiedImageRef, err = references.ParseRegistryImageReferenceFromOutOfProcessData(userSpecifiedImage)
-		if err != nil {
-			return nil, fmt.Errorf("unable to get userSpecifiedImageRef from user specified image %q: %w", userSpecifiedImage, err)
-		}
-
-		if err := s.StorageImageServer().IsRunningImageAllowed(ctx, &systemCtx, userSpecifiedImageRef, imageID); err != nil {
-			return nil, err
-		}
-	}
 
 	labelOptions, err := ctr.SelinuxLabel(sb.ProcessLabel())
 	if err != nil {

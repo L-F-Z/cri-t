@@ -369,7 +369,6 @@ func New(
 	useDefaultUmask(ctx)
 
 	config.SystemContext.AuthFilePath = config.GlobalAuthFile
-	config.SystemContext.SignaturePolicyPath = config.SignaturePolicyPath
 
 	if err := os.MkdirAll(config.ContainerAttachSocketDir, 0o755); err != nil {
 		return nil, err

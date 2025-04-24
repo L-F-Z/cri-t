@@ -113,8 +113,6 @@ crio
 [--selinux]
 [--separate-pull-cgroup]=[value]
 [--shared-cpuset]=[value]
-[--signature-policy-dir]=[value]
-[--signature-policy]=[value]
 [--stats-collection-period]=[value]
 [--storage-driver|-s]=[value]
 [--storage-opt]=[value]
@@ -403,10 +401,6 @@ crio [GLOBAL OPTIONS] command [COMMAND OPTIONS] [ARGUMENTS...]
 
 **--shared-cpuset**="": CPUs set that will be used for guaranteed containers that want access to shared cpus
 
-**--signature-policy**="": Path to signature policy JSON file.
-
-**--signature-policy-dir**="": Path to the root directory for namespaced signature policies. Must be an absolute path. (default: "/etc/crio/policies")
-
 **--stats-collection-period**="": The number of seconds between collecting pod and container stats. If set to 0, the stats are collected on-demand instead. DEPRECATED: This option will be removed in the future. (default: 0)
 
 **--storage-driver, -s**="": OCI storage driver.
@@ -556,11 +550,6 @@ Shows a list of commands or help for one command
   cri-o configuration file for all of the available command-line options for
   the crio(8) program, but in a TOML format that can be more easily modified
   and versioned.
-
-**policy.json** (/etc/containers/policy.json)
-  Signature verification policy files are used to specify policy, e.g. trusted
-  keys, applicable when deciding whether to accept an image, or individual
-  signatures of that image, as valid.
 
 **registries.conf** (/etc/containers/registries.conf)
   Registry configuration file specifies registries which are consulted when

@@ -142,7 +142,6 @@ kata_skip_devices_tests:
   - 'test "annotation should fail if one device is invalid"'
 kata_skip_image_tests:
   - 'test "container status when created by image list canonical reference"'
-  - 'test "image pull with signature"'
   - 'test "image pull and list by manifest list digest"'
   - 'test "image pull and list by manifest list tag"'
   - 'test "image pull and list by manifest list and individual digest"'

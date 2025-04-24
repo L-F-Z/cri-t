@@ -97,8 +97,6 @@ the following additional metrics:
     validation.
   - `MANIFEST_UNKNOWN`: This error is returned when the manifest, identified by
     name and tag is unknown to the repository.
-  - `MANIFEST_UNVERIFIED`: During manifest upload, if the manifest fails
-    signature verification, this error will be returned.
   - `NAME_INVALID`: Invalid repository name encountered either during manifest.
     validation or any API operation.
   - `NAME_UNKNOWN`: This is returned if the name used during an operation is

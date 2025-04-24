@@ -47,11 +47,6 @@ const markdownDocTemplate = `
   the crio(8) program, but in a TOML format that can be more easily modified
   and versioned.
 
-**policy.json** (/etc/containers/policy.json)
-  Signature verification policy files are used to specify policy, e.g. trusted
-  keys, applicable when deciding whether to accept an image, or individual
-  signatures of that image, as valid.
-
 **registries.conf** (/etc/containers/registries.conf)
   Registry configuration file specifies registries which are consulted when
   completing image names that do not include a registry or domain portion.

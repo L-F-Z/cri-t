@@ -130,7 +130,6 @@ function copyimg() {
     "$COPYIMG_BINARY" \
         --root "$TESTDIR/crio" \
         --runroot "$TESTDIR/crio-run" \
-        --signature-policy="$INTEGRATION_ROOT"/policy.json \
         $STORAGE_OPTIONS \
         "$@"
 }
@@ -175,8 +174,6 @@ function setup_crio() {
         --listen "$CRIO_SOCKET" \
         --irqbalance-config-file "$IRQBALANCE_CONFIG_FILE" \
         --irqbalance-config-restore-file "$IRQBALANCE_CONFIG_RESTORE_FILE" \
-        --signature-policy "$SIGNATURE_POLICY" \
-        --signature-policy-dir "$SIGNATURE_POLICY_DIR" \
         -r "$TESTDIR/crio" \
         --runroot "$TESTDIR/crio-run" \
         --cni-default-network "$CNI_DEFAULT_NETWORK" \

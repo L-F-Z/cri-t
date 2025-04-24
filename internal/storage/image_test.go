@@ -571,21 +571,6 @@ var _ = t.Describe("Image", func() {
 	})
 
 	t.Describe("PullImage", func() {
-		It("should fail on invalid policy path", func() {
-			// Given
-			imageRef, err := references.ParseRegistryImageReferenceFromOutOfProcessData("localhost/busybox:latest")
-			Expect(err).ToNot(HaveOccurred())
-
-			// When
-			res, err := sut.PullImage(context.Background(), imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{SignaturePolicyPath: "/not-existing"},
-			})
-
-			// Then
-			Expect(err).To(HaveOccurred())
-			Expect(res).To(Equal(storage.RegistryImageReference{}))
-		})
-
 		It("should fail on copy image", func() {
 			// Given
 			imageRef, err := references.ParseRegistryImageReferenceFromOutOfProcessData("localhost/busybox:latest")
@@ -593,7 +578,7 @@ var _ = t.Describe("Image", func() {
 
 			// When
 			res, err := sut.PullImage(context.Background(), imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{SignaturePolicyPath: "../../test/policy.json"},
+				SourceCtx: &types.SystemContext{},
 			})
 
 			// Then
@@ -608,7 +593,7 @@ var _ = t.Describe("Image", func() {
 
 			// When
 			res, err := sut.PullImage(context.Background(), imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{SignaturePolicyPath: "../../test/policy.json"},
+				SourceCtx: &types.SystemContext{},
 			})
 
 			// Then
@@ -625,7 +610,7 @@ var _ = t.Describe("Image", func() {
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
 			res, err := sut.PullImage(ctx, imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{SignaturePolicyPath: "../../test/policy.json"},
+				SourceCtx: &types.SystemContext{},
 			})
 
 			// Then
@@ -643,7 +628,7 @@ var _ = t.Describe("Image", func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 0)
 			defer cancel()
 			res, err := sut.PullImage(ctx, imageRef, &storage.ImageCopyOptions{
-				SourceCtx: &types.SystemContext{SignaturePolicyPath: "../../test/policy.json"},
+				SourceCtx: &types.SystemContext{},
 			})
 
 			// Then

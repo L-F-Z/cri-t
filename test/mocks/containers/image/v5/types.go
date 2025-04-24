@@ -189,21 +189,6 @@ func (mr *MockImageCloserMockRecorder) Reference() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reference", reflect.TypeOf((*MockImageCloser)(nil).Reference))
 }
 
-// Signatures mocks base method.
-func (m *MockImageCloser) Signatures(ctx context.Context) ([][]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Signatures", ctx)
-	ret0, _ := ret[0].([][]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Signatures indicates an expected call of Signatures.
-func (mr *MockImageCloserMockRecorder) Signatures(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Signatures", reflect.TypeOf((*MockImageCloser)(nil).Signatures), ctx)
-}
-
 // Size mocks base method.
 func (m *MockImageCloser) Size() (int64, error) {
 	m.ctrl.T.Helper()

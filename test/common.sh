@@ -86,10 +86,6 @@ STREAM_PORT=${STREAM_PORT:-10010}
 CONTAINER_METRICS_HOST=${CONTAINER_METRICS_HOST:-127.0.0.1}
 # Metrics Port
 CONTAINER_METRICS_PORT=${CONTAINER_METRICS_PORT:-9090}
-# The default signature policy to be used
-SIGNATURE_POLICY=${SIGNATURE_POLICY:-${INTEGRATION_ROOT}/policy.json}
-# The default signature policy namespace root to be used
-SIGNATURE_POLICY_DIR=${SIGNATURE_POLICY_DIR:-${TESTDATA}/policies}
 # irqbalance options
 IRQBALANCE_CONFIG_FILE=${IRQBALANCE_CONFIG_FILE:-/etc/sysconfig/irqbalance}
 IRQBALANCE_CONFIG_RESTORE_FILE=${IRQBALANCE_CONFIG_RESTORE_FILE:-disable}
@@ -127,8 +123,7 @@ function get_img() {
         mkdir -p "$dir"
         if ! "$COPYIMG_BINARY" \
             --import-from="$img" \
-            --export-to="dir:$dir" \
-            --signature-policy="$INTEGRATION_ROOT"/policy.json; then
+            --export-to="dir:$dir" ; then
             echo "Error pulling $img" >&2
             rm -fr "$dir"
             exit 1

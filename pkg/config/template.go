@@ -512,16 +512,6 @@ func initCrioTemplateConfig(c *Config) ([]*templateConfigValue, error) {
 			isDefaultValue: slices.Equal(dc.PinnedImages, c.PinnedImages),
 		},
 		{
-			templateString: templateStringCrioImageSignaturePolicy,
-			group:          crioImageConfig,
-			isDefaultValue: simpleEqual(dc.SignaturePolicyPath, c.SignaturePolicyPath),
-		},
-		{
-			templateString: templateStringCrioImageSignaturePolicyDir,
-			group:          crioImageConfig,
-			isDefaultValue: simpleEqual(dc.SignaturePolicyDir, c.SignaturePolicyDir),
-		},
-		{
 			templateString: templateStringCrioImageInsecureRegistries,
 			group:          crioImageConfig,
 			isDefaultValue: slices.Equal(dc.InsecureRegistries, c.InsecureRegistries),
@@ -1438,24 +1428,6 @@ const templateStringCrioImagePinnedImages = `# List of images to be excluded fro
 # configured by the user, which is used as a placeholder in Kubernetes pods.
 {{ $.Comment }}pinned_images = [
 {{ range $opt := .PinnedImages }}{{ $.Comment }}{{ printf "\t%q,\n" $opt }}{{ end }}{{ $.Comment }}]
-
-`
-
-const templateStringCrioImageSignaturePolicy = `# Path to the file which decides what sort of policy we use when deciding
-# whether or not to trust an image that we've pulled. It is not recommended that
-# this option be used, as the default behavior of using the system-wide default
-# policy (i.e., /etc/containers/policy.json) is most often preferred. Please
-# refer to containers-policy.json(5) for more details.
-{{ $.Comment }}signature_policy = "{{ .SignaturePolicyPath }}"
-
-`
-
-const templateStringCrioImageSignaturePolicyDir = `# Root path for pod namespace-separated signature policies.
-# The final policy to be used on image pull will be <SIGNATURE_POLICY_DIR>/<NAMESPACE>.json.
-# If no pod namespace is being provided on image pull (via the sandbox config),
-# or the concatenated path is non existent, then the signature_policy or system
-# wide policy will be used as fallback. Must be an absolute path.
-{{ $.Comment }}signature_policy_dir = "{{ .SignaturePolicyDir }}"
 
 `
 

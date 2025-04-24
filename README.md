@@ -161,7 +161,6 @@ and [Podman](https://github.com/containers/podman).
 | File                                                                                                     | Description                           |
 | -------------------------------------------------------------------------------------------------------- | ------------------------------------- |
 | [crio.conf(5)](/docs/crio.conf.5.md)                                                                     | CRI-O Configuration file              |
-| [policy.json(5)](https://github.com/containers/image/blob/main/docs/containers-policy.json.5.md)         | Signature Verification Policy File(s) |
 | [registries.conf(5)](https://github.com/containers/image/blob/main/docs/containers-registries.conf.5.md) | Registries Configuration file         |
 | [storage.conf(5)](https://github.com/containers/storage/blob/main/docs/containers-storage.conf.5.md)     | Storage Configuration file            |
 

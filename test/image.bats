@@ -125,13 +125,6 @@ function teardown() {
 	cleanup_images
 }
 
-@test "image pull with signature" {
-	skip "registry has some issues"
-	start_crio
-	crictl pull "$SIGNED_IMAGE"
-	cleanup_images
-}
-
 @test "image pull and list by tag and ID" {
 	start_crio
 	crictl pull "$IMAGE:go"

@@ -473,12 +473,6 @@ The command to run to have a container stay in the paused state. This option sup
 **pinned_images**=[]
 A list of images to be excluded from the kubelet's garbage collection. It allows specifying image names using either exact, glob, or keyword patterns. Exact matches must match the entire name, glob matches can have a wildcard \* at the end, and keyword matches can have wildcards on both ends. By default, this list includes the `pause` image if configured by the user, which is used as a placeholder in Kubernetes pods.
 
-**signature_policy**=""
-Path to the file which decides what sort of policy we use when deciding whether or not to trust an image that we've pulled. It is not recommended that this option be used, as the default behavior of using the system-wide default policy (i.e., /etc/containers/policy.json) is most often preferred. Please refer to containers-policy.json(5) for more details.
-
-**signature_policy_dir**="/etc/crio/policies"
-Root path for pod namespace-separated signature policies. The final policy to be used on image pull will be <SIGNATURE_POLICY_DIR>/\<NAMESPACE\>.json. If no pod namespace is being provided on image pull (via the sandbox config), or the concatenated path is non existent, then the signature_policy or system wide policy will be used as fallback. Must be an absolute path.
-
 **image_volumes**="mkdir"
 Controls how image volumes are handled. The valid values are mkdir, bind and ignore; the latter will ignore volumes entirely.
 

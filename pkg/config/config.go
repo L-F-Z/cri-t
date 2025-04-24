@@ -545,20 +545,6 @@ type ImageConfig struct {
 	// Pinned images will remain in the container runtime's storage until
 	// they are manually removed. Default value: empty list (no images pinned)
 	PinnedImages []string `toml:"pinned_images"`
-	// SignaturePolicyPath is the name of the file which decides what sort
-	// of policy we use when deciding whether or not to trust an image that
-	// we've pulled.  Outside of testing situations, it is strongly advised
-	// that this be left unspecified so that the default system-wide policy
-	// will be used.
-	SignaturePolicyPath string `toml:"signature_policy"`
-	// SignaturePolicyDir is the root path for pod namespace-separated
-	// signature policies. The final policy to be used on image pull will be
-	// <SIGNATURE_POLICY_DIR>/<NAMESPACE>.json.
-	// If no pod namespace is being provided on image pull (via the sandbox
-	// config), or the concatenated path is non existent, then the
-	// SignaturePolicyPath or system wide policy will be used as fallback.
-	// Must be an absolute path.
-	SignaturePolicyDir string `toml:"signature_policy_dir"`
 	// InsecureRegistries is a list of registries that must be contacted w/o
 	// TLS verification.
 	InsecureRegistries []string `toml:"insecure_registries"`
@@ -955,7 +941,6 @@ func DefaultConfig() (*Config, error) {
 			PauseImage:          DefaultPauseImage,
 			PauseCommand:        "/pause",
 			ImageVolumes:        ImageVolumesMkdir,
-			SignaturePolicyDir:  "/etc/crio/policies",
 			PullProgressTimeout: 0,
 		},
 		NetworkConfig: NetworkConfig{
@@ -1545,16 +1530,8 @@ func validateExecutablePath(executable, currentPath string) (string, error) {
 // Validate is the main entry point for image configuration validation.
 // It returns an error on validation failure, otherwise nil.
 func (c *ImageConfig) Validate(onExecution bool) error {
-	if !filepath.IsAbs(c.SignaturePolicyDir) {
-		return fmt.Errorf("signature policy dir %q is not absolute", c.SignaturePolicyDir)
-	}
 	if _, err := c.ParsePauseImage(); err != nil {
 		return fmt.Errorf("invalid pause image %q: %w", c.PauseImage, err)
-	}
-	if onExecution {
-		if err := os.MkdirAll(c.SignaturePolicyDir, 0o755); err != nil {
-			return fmt.Errorf("cannot create signature policy dir: %w", err)
-		}
 	}
 	return nil
 }

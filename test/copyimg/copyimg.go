@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
@@ -50,10 +49,6 @@ func main() {
 			Usage: "storage option",
 		},
 		&cli.StringFlag{
-			Name:  "signature-policy",
-			Usage: "signature policy",
-		},
-		&cli.StringFlag{
 			Name:  "image-name",
 			Usage: "set image name",
 		},
@@ -81,7 +76,6 @@ func main() {
 		runrootDir := c.String("runroot")
 		storageDriver := c.String("storage-driver")
 		storageOptions := c.StringSlice("storage-opt")
-		signaturePolicy := c.String("signature-policy")
 		imageName := c.String("image-name")
 		addName := c.String("add-name")
 		importFrom := c.String("import-from")
@@ -130,23 +124,6 @@ func main() {
 			}
 		}
 
-		systemContext := types.SystemContext{
-			SignaturePolicyPath: signaturePolicy,
-		}
-		policy, err := signature.DefaultPolicy(&systemContext)
-		if err != nil {
-			log.Fatalf(ctx, "Error loading signature policy: %v", err)
-		}
-		policyContext, err := signature.NewPolicyContext(policy)
-		if err != nil {
-			log.Fatalf(ctx, "Error loading signature policy: %v", err)
-		}
-		defer func() {
-			err = policyContext.Destroy()
-			if err != nil {
-				log.Fatalf(ctx, "Unable to destroy policy context: %v", err)
-			}
-		}()
 		options := &copy.Options{}
 
 		if importFrom != "" {
@@ -165,7 +142,7 @@ func main() {
 
 		if imageName != "" {
 			if importFrom != "" {
-				_, err = copy.Image(ctx, policyContext, ref, importRef, options)
+				_, err = copy.Image(ctx, nil, ref, importRef, options)
 				if err != nil {
 					log.Fatalf(ctx, "Error importing %s: %v", importFrom, err)
 				}
@@ -181,13 +158,13 @@ func main() {
 				}
 			}
 			if exportTo != "" {
-				_, err = copy.Image(ctx, policyContext, exportRef, ref, options)
+				_, err = copy.Image(ctx, nil, exportRef, ref, options)
 				if err != nil {
 					log.Fatalf(ctx, "Error exporting %s: %v", exportTo, err)
 				}
 			}
 		} else if importFrom != "" && exportTo != "" {
-			_, err = copy.Image(ctx, policyContext, exportRef, importRef, options)
+			_, err = copy.Image(ctx, nil, exportRef, importRef, options)
 			if err != nil {
 				log.Fatalf(ctx, "Error copying %s to %s: %v", importFrom, exportTo, err)
 			}
