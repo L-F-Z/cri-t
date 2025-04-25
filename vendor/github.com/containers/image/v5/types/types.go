@@ -569,6 +569,8 @@ type SystemContext struct {
 
 	// === Global configuration overrides ===
 	// If not "", overrides the system's default path for signature.Policy configuration.
+	SignaturePolicyPath string
+	// If not "", overrides the system's default path for registries.d (Docker signature storage configuration)
 	RegistriesDirPath string
 	// Path to the system-wide registries configuration file
 	SystemRegistriesConfPath string

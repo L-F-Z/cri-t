@@ -1,0 +1,23 @@
+key = "hardware.architecture"
+type = string
+example = "amd64"
+
+key = "os.libcVersion"
+type = string
+example = "2.13"
+
+key = "os.pythonVersion"
+type = string
+example = "3.9"
+
+key = "os.pythonBinPath"
+type = string
+example = "/usr/bin/python3.9"
+
+key = "nvidia.driverVersion"
+type = string
+example = "535.183.01"
+
+key = "amd.rocmVersion"
+type = string
+example = "6.2"

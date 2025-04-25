@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -243,19 +242,4 @@ func tryRecordSkippedMetric(ctx context.Context, name storage.RegistryImageRefer
 	layer := fmt.Sprintf("%s@%s", name.StringForOutOfProcessConsumptionOnly(), someBlobDigest.String())
 	log.Debugf(ctx, "Skipped layer %s", layer)
 	metrics.Instance().MetricImageLayerReuseInc(layer)
-}
-
-func decodeDockerAuth(s string) (user, password string, _ error) {
-	decoded, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return "", "", err
-	}
-	parts := strings.SplitN(string(decoded), ":", 2)
-	if len(parts) != 2 {
-		// if it's invalid just skip, as docker does
-		return "", "", nil
-	}
-	user = parts[0]
-	password = strings.Trim(parts[1], "\x00")
-	return user, password, nil
 }

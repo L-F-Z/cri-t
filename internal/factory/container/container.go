@@ -17,7 +17,7 @@ import (
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 	validate "github.com/opencontainers/runtime-tools/validate/capabilities"
-	"github.com/opencontainers/selinux/go-selinux/label"
+	"github.com/opencontainers/selinux/go-selinux"
 	"github.com/sirupsen/logrus"
 	"github.com/syndtr/gocapability/capability"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -507,7 +507,7 @@ func (c *container) SelinuxLabel(sboxLabel string) ([]string, error) {
 
 	labels := map[string]string{}
 
-	labelOptions, err := label.DupSecOpt(sboxLabel)
+	labelOptions, err := selinux.DupSecOpt(sboxLabel)
 	if err != nil {
 		return nil, err
 	}
