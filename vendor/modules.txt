@@ -275,15 +275,6 @@ github.com/containers/conmon/runner/config
 ## explicit; go 1.23
 github.com/containers/conmon-rs/internal/proto
 github.com/containers/conmon-rs/pkg/client
-# github.com/containers/image/v5 v5.34.1
-## explicit; go 1.22.8
-github.com/containers/image/v5/docker/reference
-github.com/containers/image/v5/internal/multierr
-github.com/containers/image/v5/internal/rootless
-github.com/containers/image/v5/pkg/compression/internal
-github.com/containers/image/v5/pkg/compression/types
-github.com/containers/image/v5/pkg/sysregistriesv2
-github.com/containers/image/v5/types
 # github.com/containers/kubensmnt v1.2.0
 ## explicit; go 1.18
 github.com/containers/kubensmnt

@@ -22,7 +22,6 @@ require (
 	github.com/containers/common v0.61.0
 	github.com/containers/conmon v2.0.20+incompatible
 	github.com/containers/conmon-rs v0.6.6
-	github.com/containers/image/v5 v5.34.1
 	github.com/containers/kubensmnt v1.2.0
 	github.com/containers/storage v1.57.2
 	github.com/coreos/go-systemd/v22 v22.5.1-0.20231103132048-7d375ecc2b09

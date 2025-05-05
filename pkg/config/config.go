@@ -18,7 +18,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/containers/common/pkg/hooks"
 	conmonconfig "github.com/containers/conmon/runner/config"
-	"github.com/containers/image/v5/pkg/sysregistriesv2"
 	"github.com/containers/storage"
 	"github.com/cri-o/ocicni/pkg/ocicni"
 	"github.com/docker/go-units"
@@ -1066,11 +1065,6 @@ func (c *RuntimeConfig) Validate(onExecution bool) error {
 			return fmt.Errorf("runtime validation: %w", err)
 		}
 
-		// Validate the system registries configuration
-		if _, err := sysregistriesv2.GetRegistries(nil); err != nil {
-			return fmt.Errorf("invalid registries: %w", err)
-		}
-
 		// we should use a hooks directory if
 		// it exists and is a directory
 		// it does not exist but can be created
@@ -1343,12 +1337,6 @@ func (c *RuntimeConfig) ConmonSupportsSync() bool {
 
 func (c *RuntimeConfig) ConmonSupportsLogGlobalSizeMax() bool {
 	return c.conmonManager.SupportsLogGlobalSizeMax()
-}
-
-func validateCriuInPath() error {
-	_, err := validateExecutablePath("criu", "")
-
-	return err
 }
 
 // Seccomp returns the seccomp configuration.
