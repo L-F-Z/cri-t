@@ -14,7 +14,6 @@ import (
 
 	metadata "github.com/checkpoint-restore/checkpointctl/lib"
 	"github.com/containers/common/pkg/signal"
-	"github.com/containers/storage/pkg/idtools"
 	json "github.com/json-iterator/go"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
@@ -23,9 +22,8 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
 
+	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
-	"github.com/L-F-Z/cri-t/internal/storage"
-	"github.com/L-F-Z/cri-t/internal/storage/references"
 	ann "github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
@@ -50,33 +48,29 @@ type Container struct {
 	dir        string
 	stopSignal string
 	// If set, _some_ name of the image imageID; it may have NO RELATIONSHIP to the users’ requested image name.
-	someNameOfTheImage    *references.RegistryImageReference
-	imageID               *storage.StorageImageID // nil for infra containers.
-	mountPoint            string
-	seccompProfilePath    string
-	conmonCgroupfsPath    string
-	crioAnnotations       fields.Set
-	state                 *ContainerState
-	opLock                sync.RWMutex
-	spec                  *specs.Spec
-	idMappings            *idtools.IDMappings
-	terminal              bool
-	stdin                 bool
-	stdinOnce             bool
-	created               bool
-	spoofed               bool
-	stopping              bool
-	stopLock              sync.Mutex
-	stopTimeoutChan       chan int64
-	stopWatchers          []chan struct{}
-	pidns                 nsmgr.Namespace
-	restore               bool
-	restoreArchivePath    string
-	restoreStorageImageID *storage.StorageImageID
-	resources             *types.ContainerResources
-	runtimePath           string // runtime path for a given platform
-	execPIDs              map[int]bool
-	runtimeUser           *types.ContainerUser
+	someNameOfTheImage *bundle.BundleName
+	imageID            *bundle.BundleId // nil for infra containers.
+	mountPoint         string
+	seccompProfilePath string
+	conmonCgroupfsPath string
+	crioAnnotations    fields.Set
+	state              *ContainerState
+	opLock             sync.RWMutex
+	spec               *specs.Spec
+	terminal           bool
+	stdin              bool
+	stdinOnce          bool
+	created            bool
+	spoofed            bool
+	stopping           bool
+	stopLock           sync.Mutex
+	stopTimeoutChan    chan int64
+	stopWatchers       []chan struct{}
+	pidns              nsmgr.Namespace
+	resources          *types.ContainerResources
+	runtimePath        string // runtime path for a given platform
+	execPIDs           map[int]bool
+	runtimeUser        *types.ContainerUser
 }
 
 func (c *Container) CRIAttributes() *types.ContainerAttributes {
@@ -114,8 +108,6 @@ type ContainerState struct {
 	// This is used to track whether the PID we have stored
 	// is the same as the corresponding PID on the host.
 	InitStartTime string `json:"initStartTime,omitempty"`
-	// Checkpoint/Restore related states
-	CheckpointedAt time.Time `json:"checkpointedTime,omitempty"`
 }
 
 // NewContainer creates a container object.
@@ -127,13 +119,13 @@ type ContainerState struct {
 // may have NO RELATIONSHIP to the users’ requested image name (and, which
 // should be fixed eventually, may be a repo@digest combination which has never
 // existed on a registry).
-func NewContainer(id, name, bundlePath, logPath string, labels, crioAnnotations, annotations map[string]string, userRequestedImage string, someNameOfTheImage *references.RegistryImageReference, imageID *storage.StorageImageID, someRepoDigest string, md *types.ContainerMetadata, sandbox string, terminal, stdin, stdinOnce bool, runtimeHandler, dir string, created time.Time, stopSignal string) (*Container, error) {
+func NewContainer(id, name, bundlePath, logPath string, labels, crioAnnotations, annotations map[string]string, userRequestedImage string, someNameOfTheImage *bundle.BundleName, imageID *bundle.BundleId, someRepoDigest string, md *types.ContainerMetadata, sandbox string, terminal, stdin, stdinOnce bool, runtimeHandler, dir string, created time.Time, stopSignal string) (*Container, error) {
 	state := &ContainerState{}
 	state.Created = created
 
 	imageIDString := ""
 	if imageID != nil {
-		imageIDString = imageID.IDStringForOutOfProcessConsumptionOnly()
+		imageIDString = string(*imageID)
 	}
 
 	externalImageRef := imageIDString
@@ -322,16 +314,6 @@ func (c *Container) CreatedAt() time.Time {
 	return c.state.Created
 }
 
-// CheckpointedAt returns the container checkpoint time.
-func (c *Container) CheckpointedAt() time.Time {
-	return c.state.CheckpointedAt
-}
-
-// SetCheckpointedAt sets the time of checkpointing.
-func (c *Container) SetCheckpointedAt(checkpointedAt time.Time) {
-	c.state.CheckpointedAt = checkpointedAt
-}
-
 // Name returns the name of the container.
 func (c *Container) Name() string {
 	return c.name
@@ -375,12 +357,12 @@ func (c *Container) UserRequestedImage() string {
 
 // SomeNameOfTheImage returns _some_ name of the image imageID, if any;
 // it may have NO RELATIONSHIP to the users’ requested image name.
-func (c *Container) SomeNameOfTheImage() *references.RegistryImageReference {
+func (c *Container) SomeNameOfTheImage() *bundle.BundleName {
 	return c.someNameOfTheImage
 }
 
 // ImageID returns the image ID of the container, or nil for infra containers.
-func (c *Container) ImageID() *storage.StorageImageID {
+func (c *Container) ImageID() *bundle.BundleId {
 	return c.imageID
 }
 
@@ -446,16 +428,6 @@ func (c *Container) SetMountPoint(mp string) {
 // MountPoint returns the container mount point.
 func (c *Container) MountPoint() string {
 	return c.mountPoint
-}
-
-// SetIDMappings sets the ID/GID mappings used for the container.
-func (c *Container) SetIDMappings(mappings *idtools.IDMappings) {
-	c.idMappings = mappings
-}
-
-// IDMappings returns the ID/GID mappings used for the container.
-func (c *Container) IDMappings() *idtools.IDMappings {
-	return c.idMappings
 }
 
 // SetCreated sets the created flag to true once container is created.
@@ -678,35 +650,6 @@ func (c *Container) nodeLevelPIDNamespace() bool {
 		}
 	}
 	return true
-}
-
-// Restore returns if the container is marked as being
-// restored from a checkpoint.
-func (c *Container) Restore() bool {
-	return c.restore
-}
-
-// SetRestore marks the container as being restored from a checkpoint.
-func (c *Container) SetRestore(restore bool) {
-	c.restore = restore
-}
-
-// If Restore(), and the container is being restored from a local path, RestoreArchivePath returns that path.
-func (c *Container) RestoreArchivePath() string {
-	return c.restoreArchivePath
-}
-
-func (c *Container) SetRestoreArchivePath(restoreArchivePath string) {
-	c.restoreArchivePath = restoreArchivePath
-}
-
-// If Restore(), and the container is being restored from a container image, restoreStorageImageID returns the ID of that image.
-func (c *Container) RestoreStorageImageID() *storage.StorageImageID {
-	return c.restoreStorageImageID
-}
-
-func (c *Container) SetRestoreStorageImageID(restoreStorageImageID *storage.StorageImageID) {
-	c.restoreStorageImageID = restoreStorageImageID
 }
 
 // SetResources loads the OCI Spec.Linux.Resources in the container struct.

@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
+	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/hostport"
 	"github.com/L-F-Z/cri-t/internal/lib/constants"
 	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
@@ -29,7 +30,6 @@ import (
 	"github.com/L-F-Z/cri-t/internal/oci"
 	"github.com/L-F-Z/cri-t/internal/registrar"
 	"github.com/L-F-Z/cri-t/internal/storage"
-	"github.com/L-F-Z/cri-t/internal/storage/references"
 	"github.com/L-F-Z/cri-t/pkg/annotations"
 	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 )
@@ -37,7 +37,6 @@ import (
 // ContainerServer implements the ImageServer.
 type ContainerServer struct {
 	runtime              *oci.Runtime
-	store                cstorage.Store
 	storageImageServer   storage.ImageServer
 	storageRuntimeServer storage.RuntimeServer
 	ctrNameIndex         *registrar.Registrar
@@ -55,11 +54,6 @@ type ContainerServer struct {
 // Runtime returns the oci runtime for the ContainerServer.
 func (c *ContainerServer) Runtime() *oci.Runtime {
 	return c.runtime
-}
-
-// Store returns the Store for the ContainerServer.
-func (c *ContainerServer) Store() cstorage.Store {
-	return c.store
 }
 
 // StorageImageServer returns the ImageServer for the ContainerServer.
@@ -92,46 +86,20 @@ func New(ctx context.Context, configIface libconfig.Iface) (*ContainerServer, er
 	if configIface == nil {
 		return nil, errors.New("provided config is nil")
 	}
-	store, err := configIface.GetStore()
-	if err != nil {
-		return nil, err
-	}
 	config := configIface.GetData()
-
 	if config == nil {
 		return nil, errors.New("cannot create container server: interface is nil")
 	}
 
-	if config.InternalRepair && ShutdownWasUnclean(config) {
-		graphRoot := store.GraphRoot()
-		log.Warnf(ctx, "Checking storage directory %s for errors because of unclean shutdown", graphRoot)
-
-		wipeStorage := false
-		report, err := store.Check(checkQuick())
-		if err == nil && CheckReportHasErrors(report) {
-			log.Warnf(ctx, "Attempting to repair storage directory %s because of unclean shutdown", graphRoot)
-			if errs := store.Repair(report, cstorage.RepairEverything()); len(errs) > 0 {
-				wipeStorage = true
-			}
-		} else if err != nil {
-			// Storage check has failed with irrecoverable errors.
-			wipeStorage = true
-		}
-		if wipeStorage {
-			log.Warnf(ctx, "Wiping storage directory %s because of unclean shutdown", graphRoot)
-			// This will fail if there are any containers currently running.
-			if err := RemoveStorageDirectory(config, store, false); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	imageService, err := storage.GetImageService(ctx, store, nil, config)
+	imageService, err := storage.GetImageService(ctx, config.Root)
 	if err != nil {
 		return nil, err
 	}
 
-	storageRuntimeService := storage.GetRuntimeService(ctx, imageService, nil)
+	storageRuntimeService, err := storage.GetRuntimeService(ctx, config.Root, config.RunRoot, imageService)
+	if err != nil {
+		return nil, err
+	}
 
 	runtime, err := oci.New(config)
 	if err != nil {
@@ -145,7 +113,6 @@ func New(ctx context.Context, configIface libconfig.Iface) (*ContainerServer, er
 
 	c := &ContainerServer{
 		runtime:              runtime,
-		store:                store,
 		storageImageServer:   imageService,
 		storageRuntimeServer: storageRuntimeService,
 		ctrNameIndex:         registrar.NewRegistrar(),
@@ -170,7 +137,7 @@ func New(ctx context.Context, configIface libconfig.Iface) (*ContainerServer, er
 func (c *ContainerServer) LoadSandbox(ctx context.Context, id string) (sb *sandbox.Sandbox, retErr error) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	config, err := c.store.FromContainerDirectory(id, "config.json")
+	config, err := c.storageRuntimeServer.InstanceServer().FromContainerDirectory(id, "config.json")
 	if err != nil {
 		return nil, err
 	}
@@ -290,12 +257,12 @@ func (c *ContainerServer) LoadSandbox(ctx context.Context, id string) (sb *sandb
 		}
 	}()
 
-	sandboxPath, err := c.store.ContainerRunDirectory(id)
+	sandboxPath, err := c.storageRuntimeServer.InstanceServer().ContainerRunDirectory(id)
 	if err != nil {
 		return sb, err
 	}
 
-	sandboxDir, err := c.store.ContainerDirectory(id)
+	sandboxDir, err := c.storageRuntimeServer.InstanceServer().ContainerDirectory(id)
 	if err != nil {
 		return sb, err
 	}
@@ -399,7 +366,7 @@ var ErrIsNonCrioContainer = errors.New("non CRI-O container")
 func (c *ContainerServer) LoadContainer(ctx context.Context, id string) (retErr error) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	config, err := c.store.FromContainerDirectory(id, "config.json")
+	config, err := c.storageRuntimeServer.InstanceServer().FromContainerDirectory(id, "config.json")
 	if err != nil {
 		return err
 	}
@@ -442,12 +409,12 @@ func (c *ContainerServer) LoadContainer(ctx context.Context, id string) (retErr 
 	stdin := isTrue(m.Annotations[annotations.Stdin])
 	stdinOnce := isTrue(m.Annotations[annotations.StdinOnce])
 
-	containerPath, err := c.store.ContainerRunDirectory(id)
+	containerPath, err := c.storageRuntimeServer.InstanceServer().ContainerRunDirectory(id)
 	if err != nil {
 		return err
 	}
 
-	containerDir, err := c.store.ContainerDirectory(id)
+	containerDir, err := c.storageRuntimeServer.InstanceServer().ContainerDirectory(id)
 	if err != nil {
 		return err
 	}
@@ -457,18 +424,18 @@ func (c *ContainerServer) LoadContainer(ctx context.Context, id string) (retErr 
 		userRequestedImage = ""
 	}
 
-	var someNameOfTheImage *references.RegistryImageReference
+	var someNameOfTheImage *bundle.BundleName
 	if s, ok := m.Annotations[annotations.SomeNameOfTheImage]; ok && s != "" {
-		name, err := references.ParseRegistryImageReferenceFromOutOfProcessData(s)
+		name, err := bundle.ParseBundleName(s)
 		if err != nil {
 			return fmt.Errorf("invalid %s annotation %q: %w", annotations.SomeNameOfTheImage, s, err)
 		}
 		someNameOfTheImage = &name
 	}
 
-	var imageID *storage.StorageImageID
+	var imageID *bundle.BundleId
 	if s, ok := m.Annotations[annotations.ImageRef]; ok {
-		id, err := storage.ParseStorageImageIDFromOutOfProcessData(s)
+		id, err := bundle.ParseBundleId(s)
 		if err != nil {
 			return fmt.Errorf("invalid %s annotation %q: %w", annotations.ImageRef, s, err)
 		}
@@ -612,10 +579,10 @@ func recoverLogError() {
 // Shutdown attempts to shut down the server's storage cleanly.
 func (c *ContainerServer) Shutdown() error {
 	defer recoverLogError()
-	_, err := c.store.Shutdown(false)
-	if err != nil && !errors.Is(err, cstorage.ErrLayerUsedByContainer) {
-		return err
-	}
+	// _, err := c.GetImageStore().Shutdown(false)
+	// if err != nil {
+	// 	return err
+	// }
 	c.StatsServer.Shutdown()
 	return nil
 }

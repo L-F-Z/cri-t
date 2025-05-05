@@ -46,7 +46,6 @@ crio
 [--device-ownership-from-security-context]
 [--disable-hostport-mapping]
 [--drop-infra-ctr]
-[--enable-criu-support]
 [--enable-metrics]
 [--enable-nri]
 [--enable-pod-events]
@@ -230,8 +229,6 @@ crio [GLOBAL OPTIONS] command [COMMAND OPTIONS] [ARGUMENTS...]
 **--disable-hostport-mapping**: If true, CRI-O would disable the hostport mapping.
 
 **--drop-infra-ctr**: Determines whether pods are created without an infra container, when the pod is not using a pod level PID namespace.
-
-**--enable-criu-support**: Enable CRIU integration, requires that the criu binary is available in $PATH.
 
 **--enable-metrics**: Enable metrics endpoint for the server.
 

@@ -28,6 +28,7 @@ import (
 	"k8s.io/utils/cpuset"
 	"tags.cncf.io/container-device-interface/pkg/cdi"
 
+	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/config/apparmor"
 	"github.com/L-F-Z/cri-t/internal/config/blockio"
 	"github.com/L-F-Z/cri-t/internal/config/capabilities"
@@ -42,7 +43,6 @@ import (
 	"github.com/L-F-Z/cri-t/internal/config/seccomp"
 	"github.com/L-F-Z/cri-t/internal/config/ulimits"
 	"github.com/L-F-Z/cri-t/internal/log"
-	"github.com/L-F-Z/cri-t/internal/storage/references"
 	"github.com/L-F-Z/cri-t/pkg/annotations"
 	"github.com/L-F-Z/cri-t/server/metrics/collectors"
 	"github.com/L-F-Z/cri-t/utils"
@@ -87,7 +87,6 @@ type Config struct {
 
 // Iface provides a config interface for data encapsulation.
 type Iface interface {
-	GetStore() (storage.Store, error)
 	GetData() *Config
 }
 
@@ -145,20 +144,6 @@ type RootConfig struct {
 	// explicitly handled by other options will be stored.
 	RunRoot string `toml:"runroot"`
 
-	// ImageStore if set it will allow end-users to store newly pulled image
-	// in path provided by `ImageStore` instead of path provided in `Root`.
-	ImageStore string `toml:"imagestore"`
-
-	// Storage is the name of the storage driver which handles actually
-	// storing the contents of containers.
-	Storage string `toml:"storage_driver"`
-
-	// StorageOption is a list of storage driver specific options.
-	StorageOptions []string `toml:"storage_option"`
-
-	// PullOptions is a map of pull options that are passed to the storage driver.
-	pullOptions map[string]string
-
 	// LogDir is the default log directory where all logs will go unless kubelet
 	// tells us to put them somewhere else.
 	LogDir string `toml:"log_dir"`
@@ -182,18 +167,6 @@ type RootConfig struct {
 
 	// InternalRepair is used to repair the affected images.
 	InternalRepair bool `toml:"internal_repair"`
-}
-
-// GetStore returns the container storage for a given configuration.
-func (c *RootConfig) GetStore() (storage.Store, error) {
-	return storage.GetStore(storage.StoreOptions{
-		RunRoot:            c.RunRoot,
-		GraphRoot:          c.Root,
-		ImageStore:         c.ImageStore,
-		GraphDriverName:    c.Storage,
-		GraphDriverOptions: c.StorageOptions,
-		PullOptions:        c.pullOptions,
-	})
 }
 
 // runtimeHandlerFeatures represents the supported features of the runtime.
@@ -423,10 +396,6 @@ type RuntimeConfig struct {
 	// PinNSPath is the path to find the pinns binary, which is needed
 	// to manage namespace lifecycle
 	PinnsPath string `toml:"pinns_path"`
-
-	// CriuPath is the path to find the criu binary, which is needed
-	// to checkpoint and restore containers
-	EnableCriuSupport bool `toml:"enable_criu_support"`
 
 	// Runtimes defines a list of OCI compatible runtimes. The runtime to
 	// use is picked based on the runtime_handler provided by the CRI. If
@@ -715,13 +684,9 @@ func (c *Config) UpdateFromFile(ctx context.Context, path string) error {
 // otherwise.
 func (c *Config) UpdateFromDropInFile(ctx context.Context, path string) error {
 	log.Infof(ctx, configLogPrefix+"drop-in file: %s", path)
-	// keeps the storage options from storage.conf and merge it to crio config
-	var storageOpts []string
-	storageOpts = append(storageOpts, c.StorageOptions...)
 	// storage configurations from storage.conf, if crio config has no values for these, they will be merged to crio config
 	graphRoot := c.Root
 	runRoot := c.RunRoot
-	storageDriver := c.Storage
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -736,9 +701,6 @@ func (c *Config) UpdateFromDropInFile(ctx context.Context, path string) error {
 		return fmt.Errorf("unable to decode configuration %v: %w", path, err)
 	}
 
-	storageOpts = append(storageOpts, t.Crio.RootConfig.StorageOptions...)
-	storageOpts = removeDupStorageOpts(storageOpts)
-	t.Crio.RootConfig.StorageOptions = storageOpts
 	// inherits storage configurations from storage.conf
 	if t.Crio.Root == "" {
 		t.Crio.Root = graphRoot
@@ -746,30 +708,9 @@ func (c *Config) UpdateFromDropInFile(ctx context.Context, path string) error {
 	if t.Crio.RunRoot == "" {
 		t.Crio.RunRoot = runRoot
 	}
-	if t.Crio.Storage == "" {
-		t.Crio.Storage = storageDriver
-	}
 
 	t.toConfig(c)
 	return nil
-}
-
-// removeDupStorageOpts removes duplicated storage option from the list
-// keeps the last appearance.
-func removeDupStorageOpts(storageOpts []string) []string {
-	var resOpts []string
-	opts := make(map[string]bool)
-	for i := len(storageOpts) - 1; i >= 0; i-- {
-		if ok := opts[storageOpts[i]]; ok {
-			continue
-		}
-		opts[storageOpts[i]] = true
-		resOpts = append(resOpts, storageOpts[i])
-	}
-	for i, j := 0, len(resOpts)-1; i < j; i, j = i+1, j-1 {
-		resOpts[i], resOpts[j] = resOpts[j], resOpts[i]
-	}
-	return resOpts
 }
 
 // UpdateFromPath recursively iterates the provided path and updates the
@@ -845,10 +786,6 @@ func DefaultConfig() (*Config, error) {
 		RootConfig: RootConfig{
 			Root:              storeOpts.GraphRoot,
 			RunRoot:           storeOpts.RunRoot,
-			ImageStore:        storeOpts.ImageStore,
-			Storage:           storeOpts.GraphDriverName,
-			StorageOptions:    storeOpts.GraphDriverOptions,
-			pullOptions:       storeOpts.PullOptions,
 			LogDir:            "/var/log/crio/pods",
 			VersionFile:       CrioVersionPathTmp,
 			CleanShutdownFile: CrioCleanShutdownFile,
@@ -899,7 +836,6 @@ func DefaultConfig() (*Config, error) {
 			ulimitsConfig:               ulimits.New(),
 			HostNetworkDisableSELinux:   true,
 			DisableHostPortMapping:      false,
-			EnableCriuSupport:           true,
 		},
 		ImageConfig: ImageConfig{
 			DefaultTransport:    "docker://",
@@ -956,10 +892,6 @@ func (c *Config) Validate(onExecution bool) error {
 	c.RuntimeConfig.seccompConfig.SetNotifierPath(
 		filepath.Join(filepath.Dir(c.Listen), "seccomp"),
 	)
-
-	if err := c.ImageConfig.Validate(onExecution); err != nil {
-		return fmt.Errorf("validating image config: %w", err)
-	}
 
 	if err := c.NetworkConfig.Validate(onExecution); err != nil {
 		return fmt.Errorf("validating network config: %w", err)
@@ -1041,19 +973,16 @@ func (c *RootConfig) Validate(onExecution bool) error {
 		if err := os.MkdirAll(c.LogDir, 0o700); err != nil {
 			return fmt.Errorf("invalid log_dir: %w", err)
 		}
-		store, err := c.GetStore()
-		if err != nil {
-			return fmt.Errorf("failed to get store to set defaults: %w", err)
-		}
+		// store, err := c.GetStore()
+		// if err != nil {
+		// 	return fmt.Errorf("failed to get store to set defaults: %w", err)
+		// }
 		// This step merges the /etc/container/storage.conf with the
 		// storage configuration in crio.conf
 		// If we don't do this step, we risk returning the incorrect info
 		// on Inspect (/info) requests
-		c.RunRoot = store.RunRoot()
-		c.Root = store.GraphRoot()
-		c.Storage = store.GraphDriverName()
-		c.StorageOptions = store.GraphOptions()
-		c.pullOptions = store.PullOptions()
+		// c.RunRoot = store.RunRoot()
+		// c.Root = store.GraphRoot()
 	}
 
 	return nil
@@ -1176,17 +1105,6 @@ func (c *RuntimeConfig) Validate(onExecution bool) error {
 		c.namespaceManager = nsmgr.New(c.NamespacesDir, c.PinnsPath)
 		if err := c.namespaceManager.Initialize(); err != nil {
 			return fmt.Errorf("initialize nsmgr: %w", err)
-		}
-
-		if c.EnableCriuSupport {
-			if err := validateCriuInPath(); err != nil {
-				c.EnableCriuSupport = false
-				logrus.Infof("Checkpoint/restore support disabled: CRIU binary not found int $PATH")
-			} else {
-				logrus.Infof("Checkpoint/restore support enabled")
-			}
-		} else {
-			logrus.Infof("Checkpoint/restore support disabled via configuration")
 		}
 
 		if err := c.seccompConfig.LoadProfile(c.SeccompProfile); err != nil {
@@ -1472,10 +1390,6 @@ func (c *RuntimeConfig) Devices() []device.Device {
 	return c.deviceConfig.Devices()
 }
 
-func (c *RuntimeConfig) CheckpointRestore() bool {
-	return c.EnableCriuSupport
-}
-
 func validateExecutablePath(executable, currentPath string) (string, error) {
 	if currentPath == "" {
 		path, err := exec.LookPath(executable)
@@ -1492,18 +1406,10 @@ func validateExecutablePath(executable, currentPath string) (string, error) {
 	return currentPath, nil
 }
 
-// Validate is the main entry point for image configuration validation.
-// It returns an error on validation failure, otherwise nil.
-func (c *ImageConfig) Validate(onExecution bool) error {
-	if _, err := c.ParsePauseImage(); err != nil {
-		return fmt.Errorf("invalid pause image %q: %w", c.PauseImage, err)
-	}
-	return nil
-}
-
 // ParsePauseImage parses the .PauseImage value as into a validated, well-typed value.
-func (c *ImageConfig) ParsePauseImage() (references.RegistryImageReference, error) {
-	return references.ParseRegistryImageReferenceFromOutOfProcessData(c.PauseImage)
+func (c *ImageConfig) ParsePauseImage() bundle.BundleName {
+	name, _ := bundle.ParseBundleName(c.PauseImage)
+	return name
 }
 
 // Validate is the main entry point for network configuration validation.

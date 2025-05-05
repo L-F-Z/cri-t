@@ -1491,11 +1491,9 @@ func (r *runtimeOCI) CheckpointContainer(ctx context.Context, c *Container, spec
 		return fmt.Errorf("running %q %q failed: %w", runtimePath, args, err)
 	}
 
-	c.SetCheckpointedAt(time.Now())
 	if !leaveRunning {
 		c.state.Status = ContainerStateStopped
 		c.state.ExitCode = utils.Int32Ptr(0)
-		c.state.Finished = c.CheckpointedAt()
 	}
 
 	return nil

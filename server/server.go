@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/containers/storage/pkg/idtools"
 	storageTypes "github.com/containers/storage/types"
 	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sys/unix"
@@ -24,6 +23,7 @@ import (
 	"k8s.io/kubelet/pkg/cri/streaming"
 	kubetypes "k8s.io/kubelet/pkg/types"
 
+	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/cert"
 	"github.com/L-F-Z/cri-t/internal/config/seccomp"
 	"github.com/L-F-Z/cri-t/internal/hostport"
@@ -69,7 +69,6 @@ type Server struct {
 
 	*lib.ContainerServer
 	monitorsChan        chan struct{}
-	defaultIDMappings   *idtools.IDMappings
 	ContainerEventsChan chan types.ContainerEventResponse
 
 	minimumMappableUID, minimumMappableGID int64
@@ -109,7 +108,7 @@ type pullOperation struct {
 	wg sync.WaitGroup
 	// imageRef is the reference of the actually pulled image; it is always
 	// in a full repo@digest format, resolving short names and tags
-	imageRef storage.RegistryImageReference
+	bundleId bundle.BundleId
 	// err is the error indicating if the pull operation has succeeded or not.
 	err error
 }
@@ -143,11 +142,11 @@ func (s *Server) getPortForward(req *types.PortForwardRequest) (*types.PortForwa
 // For every sandbox it fails to restore, it starts a cleanup routine attempting to call CNI DEL
 // For every container it fails to restore, it returns that containers image, so that
 // it can be cleaned up (if we're using internal_wipe).
-func (s *Server) restore(ctx context.Context) []storage.StorageImageID {
+func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	containersAndTheirImages := map[string]storage.StorageImageID{}
-	containers, err := s.Store().Containers()
+	containersAndTheirImages := map[string]bundle.BundleId{}
+	containers, err := s.StorageRuntimeServer().InstanceServer().Containers()
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Warnf(ctx, "Could not read containers and sandboxes: %v", err)
 	}
@@ -170,7 +169,7 @@ func (s *Server) restore(ctx context.Context) []storage.StorageImageID {
 			pods[containers[i].ID] = &metadata
 		} else {
 			podContainers[containers[i].ID] = &metadata
-			imageID, err := storage.ParseStorageImageIDFromOutOfProcessData(containers[i].ImageID)
+			imageID, err := bundle.ParseBundleId(containers[i].ImageID)
 			if err != nil {
 				log.Warnf(ctx, "Error parsing image ID %q of container %q: %v, ignoring", containers[i].ImageID, containers[i].ID, err)
 				continue
@@ -198,7 +197,7 @@ func (s *Server) restore(ctx context.Context) []storage.StorageImageID {
 		}
 		log.Warnf(ctx, "Could not restore sandbox %s: %v", sbID, err)
 		for _, n := range names[sbID] {
-			if err := s.Store().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
+			if err := s.StorageRuntimeServer().InstanceServer().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
 				log.Warnf(ctx, "Unable to delete container %s: %v", n, err)
 			}
 			// Release the infra container name and the pod name for future use
@@ -215,7 +214,7 @@ func (s *Server) restore(ctx context.Context) []storage.StorageImageID {
 				continue
 			}
 			for _, n := range names[k] {
-				if err := s.Store().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
+				if err := s.StorageRuntimeServer().InstanceServer().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
 					log.Warnf(ctx, "Unable to delete container %s: %v", n, err)
 				}
 				// Release the container name for future use
@@ -237,7 +236,7 @@ func (s *Server) restore(ctx context.Context) []storage.StorageImageID {
 		}
 		log.Warnf(ctx, "Could not restore container %s: %v", containerID, err)
 		for _, n := range names[containerID] {
-			if err := s.Store().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
+			if err := s.StorageRuntimeServer().InstanceServer().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
 				log.Warnf(ctx, "Unable to delete container %s: %v", n, err)
 			}
 			// Release the container name
@@ -284,7 +283,7 @@ func (s *Server) restore(ctx context.Context) []storage.StorageImageID {
 	}
 
 	// Return a slice of images to remove, if internal_wipe is set.
-	imagesOfDeletedContainers := []storage.StorageImageID{}
+	imagesOfDeletedContainers := []bundle.BundleId{}
 	for _, image := range containersAndTheirImages {
 		imagesOfDeletedContainers = append(imagesOfDeletedContainers, image)
 	}
@@ -303,7 +302,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 	// first, make sure we sync all the changes to the file system holding
 	// the graph root
-	if err := utils.Syncfs(s.Store().GraphRoot()); err != nil {
+	if err := utils.Syncfs(s.StorageImageServer().Root()); err != nil {
+		return fmt.Errorf("failed to sync graph root after shutting down: %w", err)
+	}
+	if err := utils.Syncfs(s.StorageRuntimeServer().InstanceServer().Root()); err != nil {
 		return fmt.Errorf("failed to sync graph root after shutting down: %w", err)
 	}
 
@@ -335,23 +337,6 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func getIDMappings(config *libconfig.Config) (*idtools.IDMappings, error) {
-	if config.UIDMappings == "" || config.GIDMappings == "" {
-		return nil, nil
-	}
-
-	parsedUIDsMappings, err := idtools.ParseIDMap(strings.Split(config.UIDMappings, ","), "UID")
-	if err != nil {
-		return nil, err
-	}
-	parsedGIDsMappings, err := idtools.ParseIDMap(strings.Split(config.GIDMappings, ","), "GID")
-	if err != nil {
-		return nil, err
-	}
-
-	return idtools.NewIDMappingsFromMaps(parsedUIDsMappings, parsedGIDsMappings), nil
 }
 
 // New creates a new Server with the provided context and configuration.
@@ -395,14 +380,6 @@ func New(
 		hostportManager = hostport.NewHostportManager()
 	}
 
-	idMappings, err := getIDMappings(config)
-	if err != nil {
-		return nil, err
-	}
-	if idMappings != nil {
-		log.Errorf(ctx, "Configuration options 'uid_mappings' and 'gid_mappings' are deprecated, and will be replaced with native Kubernetes support for user namespaces in the future")
-	}
-
 	if os.Getenv(rootlessEnvName) == "" {
 		// Not running as rootless, reset XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS
 		os.Unsetenv("XDG_RUNTIME_DIR")
@@ -415,7 +392,6 @@ func New(
 		config:                   *config,
 		stream:                   &StreamService{},
 		monitorsChan:             make(chan struct{}),
-		defaultIDMappings:        idMappings,
 		minimumMappableUID:       config.MinimumMappableUID,
 		minimumMappableGID:       config.MinimumMappableGID,
 		pullOperationsInProgress: make(map[pullArguments]*pullOperation),
@@ -586,7 +562,7 @@ func useDefaultUmask(ctx context.Context) {
 // wipeIfAppropriate takes a list of images. If the config's VersionFilePersist
 // indicates an upgrade has happened, it attempts to wipe that list of images.
 // This attempt is best-effort.
-func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []storage.StorageImageID) {
+func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []bundle.BundleId) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 	if !s.config.InternalWipe {
@@ -617,7 +593,7 @@ func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []storage
 	}
 
 	// Translate to a map so the images are only attempted to be deleted once.
-	imageMapToDelete := make(map[storage.StorageImageID]struct{})
+	imageMapToDelete := make(map[bundle.BundleId]struct{})
 	for _, img := range imagesToDelete {
 		imageMapToDelete[img] = struct{}{}
 	}

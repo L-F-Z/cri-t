@@ -31,7 +31,6 @@ import (
 	"github.com/L-F-Z/cri-t/internal/lib/constants"
 	"github.com/L-F-Z/cri-t/internal/log"
 	"github.com/L-F-Z/cri-t/internal/oci"
-	"github.com/L-F-Z/cri-t/internal/storage"
 	"github.com/L-F-Z/cri-t/pkg/annotations"
 	"github.com/L-F-Z/cri-t/pkg/config"
 	"github.com/L-F-Z/cri-t/utils"
@@ -107,7 +106,7 @@ type Container interface {
 	SpecAddMount(rspec.Mount)
 
 	// SpecAddAnnotations adds annotations to the spec.
-	SpecAddAnnotations(ctx context.Context, sb SandboxIFace, containerVolume []oci.ContainerVolume, mountPoint, configStopSignal string, imageResult *storage.ImageResult, isSystemd bool, seccompRef, platformRuntimePath string) error
+	SpecAddAnnotations(ctx context.Context, sb SandboxIFace, containerVolume []oci.ContainerVolume, mountPoint, configStopSignal string, imageResult *types.Image, isSystemd bool, seccompRef, platformRuntimePath string) error
 
 	// SpecAddDevices adds devices from the server config, and container CRI config
 	SpecAddDevices([]device.Device, []device.Device, bool, bool) error
@@ -172,7 +171,7 @@ func (c *container) SpecAddMount(r rspec.Mount) {
 }
 
 // SpecAddAnnotation adds all annotations to the spec.
-func (c *container) SpecAddAnnotations(ctx context.Context, sb SandboxIFace, containerVolumes []oci.ContainerVolume, mountPoint, configStopSignal string, imageResult *storage.ImageResult, isSystemd bool, seccompRef, platformRuntimePath string) (err error) {
+func (c *container) SpecAddAnnotations(ctx context.Context, sb SandboxIFace, containerVolumes []oci.ContainerVolume, mountPoint, configStopSignal string, imageResult *types.Image, isSystemd bool, seccompRef, platformRuntimePath string) (err error) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 	// Copied from k8s.io/kubernetes/pkg/kubelet/kuberuntime/labels.go
@@ -223,11 +222,11 @@ func (c *container) SpecAddAnnotations(ctx context.Context, sb SandboxIFace, con
 
 	c.spec.AddAnnotation(annotations.UserRequestedImage, userRequestedImage)
 	someNameOfThisImage := ""
-	if imageResult.SomeNameOfThisImage != nil {
-		someNameOfThisImage = imageResult.SomeNameOfThisImage.StringForOutOfProcessConsumptionOnly()
+	if len(imageResult.RepoTags) > 0 {
+		someNameOfThisImage = imageResult.RepoTags[0]
 	}
 	c.spec.AddAnnotation(annotations.SomeNameOfTheImage, someNameOfThisImage)
-	c.spec.AddAnnotation(annotations.ImageRef, imageResult.ID.IDStringForOutOfProcessConsumptionOnly())
+	c.spec.AddAnnotation(annotations.ImageRef, imageResult.Id)
 	c.spec.AddAnnotation(annotations.Name, c.Name())
 	c.spec.AddAnnotation(annotations.ContainerID, c.ID())
 	c.spec.AddAnnotation(annotations.SandboxID, sb.ID())

@@ -374,7 +374,7 @@ func main() {
 		// We always use 'Volatile: true' when creating containers, which means that in
 		// the event of an unclean shutdown, we might lose track of containers and layers.
 		// We need to call the garbage collection function to clean up the redundant files.
-		if err := crioServer.Store().GarbageCollect(); err != nil {
+		if err := crioServer.ContainerServer.StorageRuntimeServer().InstanceServer().GarbageCollect(); err != nil {
 			logrus.Errorf("Attempts to clean up unreferenced old container leftovers failed: %v", err)
 		}
 

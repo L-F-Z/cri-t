@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containers/storage/pkg/idtools"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	spec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
@@ -20,7 +19,7 @@ import (
 	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 )
 
-func (b *sandboxBuilder) InitInfraContainer(serverConfig *libconfig.Config, podContainer *storage.ContainerInfo, sandboxIDMappings *idtools.IDMappings) error {
+func (b *sandboxBuilder) InitInfraContainer(serverConfig *libconfig.Config, podContainer *storage.ContainerInfo) error {
 	var err error
 	b.infra, err = container.New()
 	if err != nil {
@@ -47,7 +46,7 @@ func (b *sandboxBuilder) InitInfraContainer(serverConfig *libconfig.Config, podC
 	}
 	g.SetProcessArgs(pauseCommand)
 
-	if err := b.createResolvConf(podContainer, sandboxIDMappings); err != nil {
+	if err := b.createResolvConf(podContainer); err != nil {
 		return fmt.Errorf("create resolv conf: %w", err)
 	}
 
@@ -88,7 +87,7 @@ func PauseCommand(cfg *libconfig.Config, image *v1.Image) ([]string, error) {
 	return cmd, nil
 }
 
-func (b *sandboxBuilder) createResolvConf(podContainer *storage.ContainerInfo, sandboxIDMappings *idtools.IDMappings) (retErr error) {
+func (b *sandboxBuilder) createResolvConf(podContainer *storage.ContainerInfo) (retErr error) {
 	// set DNS options
 	b.sandboxRef.resolvPath = podContainer.RunDir + "/resolv.conf"
 
@@ -114,12 +113,6 @@ func (b *sandboxBuilder) createResolvConf(podContainer *storage.ContainerInfo, s
 
 	if err := label.Relabel(b.sandboxRef.resolvPath, podContainer.MountLabel, false); err != nil && !errors.Is(err, unix.ENOTSUP) {
 		return err
-	}
-	if sandboxIDMappings != nil {
-		rootPair := sandboxIDMappings.RootPair()
-		if err := os.Chown(b.sandboxRef.resolvPath, rootPair.UID, rootPair.GID); err != nil {
-			return fmt.Errorf("cannot chown %s to %d:%d: %w", b.sandboxRef.resolvPath, rootPair.UID, rootPair.GID, err)
-		}
 	}
 	mnt := spec.Mount{
 		Type:        "bind",

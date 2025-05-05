@@ -24,18 +24,17 @@ import (
 	"github.com/L-F-Z/TaskC/pkg/bundle/pubgrub"
 	"github.com/L-F-Z/TaskC/pkg/dcontext"
 	"github.com/L-F-Z/TaskC/pkg/prefab"
-	"github.com/google/uuid"
 )
 
 // assemble the blueprint into a given bundle
 // blueprintPath must be an absoulute path
 func (bm *BundleManager) Assemble(blueprint prefab.Blueprint, basePath string, dctx *dcontext.DeployContext) (err error) {
-	bundleID := uuid.New().String()
+	bundleId := newBundleId()
 	if err != nil {
 		err = fmt.Errorf("unable to create a new bundle ID: [%v]", err)
 		return
 	}
-	workDir := filepath.Join(bm.bundleDir, bundleID)
+	workDir := filepath.Join(bm.bundleDir, string(bundleId))
 	err = os.MkdirAll(workDir, 0700)
 	if err != nil {
 		return fmt.Errorf("failed to create work directory: [%v]", err)
@@ -47,6 +46,7 @@ func (bm *BundleManager) Assemble(blueprint prefab.Blueprint, basePath string, d
 	}()
 
 	bundle := &Bundle{
+		Id:          bundleId,
 		Prefabs:     make(map[string]string, 0),
 		LocalDir:    filepath.Join(workDir, "local"),
 		LocalDirCnt: 0,
@@ -105,7 +105,7 @@ func (bm *BundleManager) Assemble(blueprint prefab.Blueprint, basePath string, d
 	defer file.Close()
 	encoder := json.NewEncoder(file)
 	err = encoder.Encode(bundle)
-	return bm.AddBundleID(blueprint.Name, blueprint.Version, bundleID)
+	return bm.AddBundleID(blueprint.Name, blueprint.Version, bundleId)
 }
 
 func FilterNonLocal(ori [][]*prefab.Prefab) (filtered [][]*prefab.Prefab) {

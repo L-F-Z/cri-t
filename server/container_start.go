@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	metadata "github.com/checkpoint-restore/checkpointctl/lib"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/L-F-Z/cri-t/internal/lib"
 	"github.com/L-F-Z/cri-t/internal/log"
 	oci "github.com/L-F-Z/cri-t/internal/oci"
 	"github.com/L-F-Z/cri-t/internal/runtimehandlerhooks"
@@ -24,37 +22,6 @@ func (s *Server) StartContainer(ctx context.Context, req *types.StartContainerRe
 	c, err := s.GetContainerFromShortID(ctx, req.ContainerId)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "could not find container %q: %v", req.ContainerId, err)
-	}
-
-	if c.Restore() {
-		// If the create command found a checkpoint image, the container
-		// has the restore flag set to true. At this point we need to jump
-		// into the restore code.
-		log.Debugf(ctx, "Restoring container %q", req.ContainerId)
-
-		ctr, err := s.ContainerServer.ContainerRestore(
-			ctx,
-			&metadata.ContainerConfig{
-				ID: c.ID(),
-			},
-			&lib.ContainerCheckpointOptions{},
-		)
-		if err != nil {
-			ociContainer, err1 := s.GetContainerFromShortID(ctx, c.ID())
-			if err1 != nil {
-				return nil, fmt.Errorf("failed to find container %s: %w", c.ID(), err1)
-			}
-			s.ReleaseContainerName(ctx, ociContainer.Name())
-			err2 := s.StorageRuntimeServer().DeleteContainer(ctx, c.ID())
-			if err2 != nil {
-				log.Warnf(ctx, "Failed to cleanup container directory: %v", err2)
-			}
-			s.removeContainer(ctx, ociContainer)
-			return nil, err
-		}
-
-		log.Infof(ctx, "Restored container: %s", ctr)
-		return &types.StartContainerResponse{}, nil
 	}
 
 	state := c.State()

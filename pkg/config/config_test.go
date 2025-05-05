@@ -813,90 +813,6 @@ var _ = t.Describe("Config", func() {
 		})
 	})
 
-	t.Describe("ValidateImageConfig", func() {
-		It("should succeed with default config", func() {
-			// Given
-			// When
-			err := sut.ImageConfig.Validate(false)
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should succeed on execution and writing permissions", func() {
-			// Given
-			// When
-			err := sut.ImageConfig.Validate(true)
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should fail when PauseImage is invalid", func() {
-			// Given
-			sut.ImageConfig.PauseImage = "//NOT:a valid image reference!"
-
-			// When
-			err := sut.ImageConfig.Validate(false)
-
-			// Then
-			Expect(err).To(HaveOccurred())
-		})
-	})
-
-	t.Describe("ImageConfig.ParsePauseImage", func() {
-		It("should succeed with the default value", func() {
-			// Given
-			sut.ImageConfig.PauseImage = config.DefaultPauseImage
-
-			// When
-			ref, err := sut.ImageConfig.ParsePauseImage()
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-			// DefaultPauseImage is using a canonical form where this comparison is expected to work.
-			Expect(ref.StringForOutOfProcessConsumptionOnly()).To(Equal(config.DefaultPauseImage))
-		})
-
-		It("should succeed with a name-only value", func() {
-			// Given
-			sut.ImageConfig.PauseImage = "registry.k8s.io/pause"
-
-			// When
-			ref, err := sut.ImageConfig.ParsePauseImage()
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-			Expect(ref.StringForOutOfProcessConsumptionOnly()).To(Equal("registry.k8s.io/pause:latest"))
-		})
-
-		It("should succeed with a short name", func() {
-			// NOTE: This behavior is undocumented. Users are expected to provide a
-			// name with a registry
-
-			// Given
-			sut.ImageConfig.PauseImage = "short:notlatest"
-
-			// When
-			ref, err := sut.ImageConfig.ParsePauseImage()
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-			Expect(ref.StringForOutOfProcessConsumptionOnly()).To(Equal("docker.io/library/short:notlatest"))
-		})
-
-		It("should fail with an invalid value", func() {
-			// Given
-			sut.ImageConfig.PauseImage = "//THIS is:very!invalid="
-
-			// When
-			_, err := sut.ImageConfig.ParsePauseImage()
-
-			// Then
-			Expect(err).To(HaveOccurred())
-		})
-	})
-
 	t.Describe("ValidateNetworkConfig", func() {
 		It("should succeed with default config", func() {
 			// Given
@@ -1061,8 +977,6 @@ var _ = t.Describe("Config", func() {
 
 			sut.RootConfig.RunRoot = ""
 			sut.RootConfig.Root = ""
-			sut.RootConfig.Storage = ""
-			sut.RootConfig.StorageOptions = make([]string, 0)
 			// this must be set in case pinns isn't downloaded to the $PATH
 			sut.RuntimeConfig.PinnsPath = alwaysPresentPath
 
@@ -1073,8 +987,6 @@ var _ = t.Describe("Config", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(sut.RootConfig.RunRoot).To(Equal(defaultStore.RunRoot()))
 			Expect(sut.RootConfig.Root).To(Equal(defaultStore.GraphRoot()))
-			Expect(sut.RootConfig.Storage).To(Equal(defaultStore.GraphDriverName()))
-			Expect(sut.RootConfig.StorageOptions).To(Equal(defaultStore.GraphOptions()))
 		})
 
 		It("should override default storage options", func() {
@@ -1143,41 +1055,9 @@ var _ = t.Describe("Config", func() {
 
 			// Then
 			Expect(err).ToNot(HaveOccurred())
-			Expect(sut.Storage).To(Equal("overlay2"))
 			Expect(sut.Runtimes).To(HaveLen(1))
 			Expect(sut.Runtimes).To(HaveKey(config.DefaultRuntime))
 			Expect(sut.PidsLimit).To(BeEquivalentTo(2048))
-		})
-
-		It("should inherit storage_options from storage.conf and remove duplicates", func() {
-			f := t.MustTempFile("config")
-			// Given
-			Expect(os.WriteFile(f,
-				[]byte(`
-					[crio]
-					storage_option = [
-						"foo=bar",
-					]`,
-				), 0),
-			).To(Succeed())
-			for _, tc := range []struct {
-				opts   []string
-				expect []string
-			}{
-				{[]string{"option1=v1", "option2=v2", "option3=v3"}, []string{"option1=v1", "option2=v2", "option3=v3", "foo=bar"}},
-				{[]string{"option1=v1", "option3=v3", "option2=v2", "option3=v3"}, []string{"option1=v1", "option2=v2", "option3=v3", "foo=bar"}},
-				{[]string{"option1=v1", "option2=v2", "option3=v3", "option1=v1"}, []string{"option2=v2", "option3=v3", "option1=v1", "foo=bar"}},
-				{[]string{"option1=v1", "option2=v2", "option3=v3", "option4=v4", "option3=v3", "option1=v1"}, []string{"option2=v2", "option4=v4", "option3=v3", "option1=v1", "foo=bar"}},
-			} {
-				// When
-				defaultcfg := defaultConfig()
-				defaultcfg.StorageOptions = tc.opts
-				err := defaultcfg.UpdateFromFile(context.Background(), f)
-
-				// Then
-				Expect(err).ToNot(HaveOccurred())
-				Expect(defaultcfg.RootConfig.StorageOptions).To(Equal(tc.expect))
-			}
 		})
 
 		It("should inherit graphroot from storage.conf if crio root is empty", func() {
@@ -1237,36 +1117,6 @@ var _ = t.Describe("Config", func() {
 				// Then
 				Expect(err).ToNot(HaveOccurred())
 				Expect(defaultcfg.RunRoot).To(Equal(tc.expect))
-			}
-		})
-
-		It("should inherit runroot from storage.conf if crio runroot is empty", func() {
-			f := t.MustTempFile("config")
-			for _, tc := range []struct {
-				criocfg       []byte
-				storageDriver string
-				expect        string
-			}{
-				{[]byte(`
-				[crio]
-				storage_driver = ""
-				`,
-				), "/test/storage", "/test/storage"},
-				{[]byte(`
-				[crio]
-				storage_driver = "/test/crio/storage"
-				`,
-				), "/test/storage", "/test/crio/storage"},
-			} {
-				Expect(os.WriteFile(f, tc.criocfg, 0)).To(Succeed())
-				// When
-				defaultcfg := defaultConfig()
-				defaultcfg.Storage = tc.storageDriver
-				err := defaultcfg.UpdateFromFile(context.Background(), f)
-
-				// Then
-				Expect(err).ToNot(HaveOccurred())
-				Expect(defaultcfg.Storage).To(Equal(tc.expect))
 			}
 		})
 

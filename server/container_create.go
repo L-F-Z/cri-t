@@ -358,58 +358,12 @@ func (s *Server) CreateContainer(ctx context.Context, req *types.CreateContainer
 
 	log.Infof(ctx, "Creating container: %s", oci.LabelsToDescription(req.GetConfig().GetLabels()))
 
-	// Check if image is a file. If it is a file it might be a checkpoint archive.
-	checkpointImage, err := func() (bool, error) {
-		if !s.config.CheckpointRestore() {
-			// If CRIU support is not enabled return from
-			// this check as early as possible.
-			return false, nil
-		}
-		if _, err := os.Stat(req.Config.Image.Image); err == nil {
-			log.Debugf(
-				ctx,
-				"%q is a file. Assuming it is a checkpoint archive",
-				req.Config.Image.Image,
-			)
-			return true, nil
-		}
-		// Check if this is an OCI checkpoint image
-		imageID, err := s.checkIfCheckpointOCIImage(ctx, req.Config.Image.Image)
-		if err != nil {
-			return false, fmt.Errorf("failed to check if this is a checkpoint image: %w", err)
-		}
-
-		return imageID != nil, nil
-	}()
-	if err != nil {
-		return nil, err
-	}
-
 	sb, err := s.getPodSandboxFromRequest(ctx, req.PodSandboxId)
 	if err != nil {
 		if errors.Is(err, sandbox.ErrIDEmpty) {
 			return nil, err
 		}
 		return nil, fmt.Errorf("specified sandbox not found: %s: %w", req.PodSandboxId, err)
-	}
-
-	if checkpointImage {
-		// This might be a checkpoint image. Let's pass
-		// it to the checkpoint code.
-		ctrID, err := s.CRImportCheckpoint(
-			ctx,
-			req.Config,
-			sb,
-			req.SandboxConfig.Metadata.Uid,
-		)
-		if err != nil {
-			return nil, err
-		}
-		log.Debugf(ctx, "Prepared %s for restore\n", ctrID)
-
-		return &types.CreateContainerResponse{
-			ContainerId: ctrID,
-		}, nil
 	}
 
 	stopMutex := sb.StopMutex()
@@ -496,13 +450,8 @@ func (s *Server) CreateContainer(ctx context.Context, req *types.CreateContainer
 		return nil
 	})
 
-	mappings, err := s.getSandboxIDMappings(ctx, sb)
-	if err != nil {
-		return nil, err
-	}
-
 	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container runtime creation")
-	if err := s.createContainerPlatform(ctx, newContainer, sb.CgroupParent(), mappings); err != nil {
+	if err := s.createContainerPlatform(ctx, newContainer, sb.CgroupParent()); err != nil {
 		return nil, err
 	}
 	resourceCleaner.Add(ctx, "createCtr: removing container ID "+ctr.ID()+" from runtime", func() error {

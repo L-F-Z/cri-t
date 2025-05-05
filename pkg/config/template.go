@@ -117,21 +117,6 @@ func initCrioTemplateConfig(c *Config) ([]*templateConfigValue, error) {
 			isDefaultValue: simpleEqual(dc.RunRoot, c.RunRoot),
 		},
 		{
-			templateString: templateStringCrioImageStore,
-			group:          crioRootConfig,
-			isDefaultValue: simpleEqual(dc.ImageStore, c.ImageStore),
-		},
-		{
-			templateString: templateStringCrioStorageDriver,
-			group:          crioRootConfig,
-			isDefaultValue: simpleEqual(dc.Storage, c.Storage),
-		},
-		{
-			templateString: templateStringCrioStorageOption,
-			group:          crioRootConfig,
-			isDefaultValue: slices.Equal(dc.StorageOptions, c.StorageOptions),
-		},
-		{
 			templateString: templateStringCrioLogDir,
 			group:          crioRootConfig,
 			isDefaultValue: simpleEqual(dc.LogDir, c.LogDir),
@@ -432,11 +417,6 @@ func initCrioTemplateConfig(c *Config) ([]*templateConfigValue, error) {
 			isDefaultValue: simpleEqual(dc.PinnsPath, c.PinnsPath),
 		},
 		{
-			templateString: templateStringCrioRuntimeEnableCriuSupport,
-			group:          crioRuntimeConfig,
-			isDefaultValue: simpleEqual(dc.EnableCriuSupport, c.EnableCriuSupport),
-		},
-		{
 			templateString: templateStringCrioRuntimeEnablePodEvents,
 			group:          crioRuntimeConfig,
 			isDefaultValue: simpleEqual(dc.EnablePodEvents, c.EnablePodEvents),
@@ -700,24 +680,6 @@ const templateStringCrioRoot = `# Path to the "root directory". CRI-O stores all
 
 const templateStringCrioRunroot = `# Path to the "run directory". CRI-O stores all of its state in this directory.
 {{ $.Comment }}runroot = "{{ .RunRoot }}"
-
-`
-
-const templateStringCrioImageStore = `# Path to the "imagestore". If CRI-O stores all of its images in this directory differently than Root.
-{{ $.Comment }}imagestore = "{{ .ImageStore }}"
-
-`
-
-const templateStringCrioStorageDriver = `# Storage driver used to manage the storage of images and containers. Please
-# refer to containers-storage.conf(5) to see all available storage drivers.
-{{ $.Comment }}storage_driver = "{{ .Storage }}"
-
-`
-
-const templateStringCrioStorageOption = `# List to pass options to the storage driver. Please refer to
-# containers-storage.conf(5) to see all available storage options.
-{{ $.Comment }}storage_option = [
-{{ range $opt := .StorageOptions }}{{ $.Comment }}{{ printf "\t%q,\n" $opt }}{{ end }}{{ $.Comment }}]
 
 `
 
@@ -1129,11 +1091,6 @@ const templateStringCrioRuntimeNamespacesDir = `# The directory where the state 
 const templateStringCrioRuntimePinnsPath = `# pinns_path is the path to find the pinns binary, which is needed to manage namespace lifecycle
 {{ $.Comment }}pinns_path = "{{ .PinnsPath }}"
 
-`
-
-const templateStringCrioRuntimeEnableCriuSupport = `# Globally enable/disable CRIU support which is necessary to
-# checkpoint and restore container or pods (even if CRIU is found in $PATH).
-{{ $.Comment }}enable_criu_support = {{ .EnableCriuSupport }}
 
 `
 

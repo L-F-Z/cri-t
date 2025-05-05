@@ -15,7 +15,6 @@ import (
 
 	"github.com/containers/common/pkg/subscriptions"
 	"github.com/containers/common/pkg/timezone"
-	cstorage "github.com/containers/storage"
 	"github.com/containers/storage/pkg/idtools"
 	"github.com/containers/storage/pkg/mount"
 	"github.com/containers/storage/pkg/unshare"
@@ -23,10 +22,10 @@ import (
 	"github.com/intel/goresctrl/pkg/blockio"
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
-	"golang.org/x/sys/unix"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
 
+	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/config/device"
 	"github.com/L-F-Z/cri-t/internal/config/node"
 	"github.com/L-F-Z/cri-t/internal/config/rdt"
@@ -36,7 +35,6 @@ import (
 	"github.com/L-F-Z/cri-t/internal/log"
 	oci "github.com/L-F-Z/cri-t/internal/oci"
 	"github.com/L-F-Z/cri-t/internal/runtimehandlerhooks"
-	"github.com/L-F-Z/cri-t/internal/storage"
 	crioann "github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
@@ -46,82 +44,10 @@ const (
 )
 
 // createContainerPlatform performs platform dependent intermediate steps before calling the container's oci.Runtime().CreateContainer().
-func (s *Server) createContainerPlatform(ctx context.Context, container *oci.Container, cgroupParent string, idMappings *idtools.IDMappings) error {
+func (s *Server) createContainerPlatform(ctx context.Context, container *oci.Container, cgroupParent string) error {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	if idMappings != nil && !container.Spoofed() {
-		rootPair := idMappings.RootPair()
-		for _, path := range []string{container.BundlePath(), container.MountPoint()} {
-			if err := makeAccessible(path, rootPair.UID, rootPair.GID); err != nil {
-				return fmt.Errorf("cannot make %s accessible to %d:%d: %w", path, rootPair.UID, rootPair.GID, err)
-			}
-		}
-	}
 	return s.Runtime().CreateContainer(ctx, container, cgroupParent, false)
-}
-
-// makeAccessible changes the path permission and each parent directory to have --x--x--x.
-func makeAccessible(path string, uid, gid int) error {
-	for ; path != "/"; path = filepath.Dir(path) {
-		var st unix.Stat_t
-		err := unix.Stat(path, &st)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil
-			}
-			return err
-		}
-		if int(st.Uid) == uid && int(st.Gid) == gid {
-			continue
-		}
-		perm := os.FileMode(st.Mode) & os.ModePerm
-		if perm&0o111 != 0o111 {
-			if err := os.Chmod(path, perm|0o111); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func toContainer(id uint32, idMap []idtools.IDMap) uint32 {
-	hostID := int(id)
-	if idMap == nil {
-		return uint32(hostID)
-	}
-	for _, m := range idMap {
-		if hostID >= m.HostID && hostID < m.HostID+m.Size {
-			contID := m.ContainerID + (hostID - m.HostID)
-			return uint32(contID)
-		}
-	}
-	// If the ID cannot be mapped, it means the RunAsUser or RunAsGroup was not specified
-	// so just use the original value.
-	return id
-}
-
-// finalizeUserMapping changes the UID, GID and additional GIDs to reflect the new value in the user namespace.
-func (s *Server) finalizeUserMapping(sb *sandbox.Sandbox, specgen *generate.Generator, mappings *idtools.IDMappings) {
-	if mappings == nil {
-		return
-	}
-
-	// if the namespace was configured because of a static configuration, do not attempt any mapping
-	if s.defaultIDMappings != nil && !s.defaultIDMappings.Empty() {
-		return
-	}
-
-	if sb.Annotations()[crioann.UsernsModeAnnotation] == "" {
-		return
-	}
-
-	specgen.Config.Process.User.UID = toContainer(specgen.Config.Process.User.UID, mappings.UIDs())
-	gids := mappings.GIDs()
-	specgen.Config.Process.User.GID = toContainer(specgen.Config.Process.User.GID, gids)
-	for i := range specgen.Config.Process.User.AdditionalGids {
-		gid := toContainer(specgen.Config.Process.User.AdditionalGids[i], gids)
-		specgen.Config.Process.User.AdditionalGids[i] = gid
-	}
 }
 
 func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Container, sb *sandbox.Sandbox) (cntr *oci.Container, retErr error) {
@@ -160,37 +86,17 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		return nil, err
 	}
 
-	// Get imageName and imageID that are later requested in container status
-	var imgResult *storage.ImageResult
-	if id := s.StorageImageServer().HeuristicallyTryResolvingStringAsIDPrefix(userRequestedImage); id != nil {
-		imgResult, err = s.StorageImageServer().ImageStatusByID(*id)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		potentialMatches, err := s.StorageImageServer().CandidatesForPotentiallyShortImageName(userRequestedImage)
-		if err != nil {
-			return nil, err
-		}
-		var imgResultErr error
-		for _, name := range potentialMatches {
-			imgResult, imgResultErr = s.StorageImageServer().ImageStatusByName(name)
-			if imgResultErr == nil {
-				break
-			}
-		}
-		if imgResultErr != nil {
-			return nil, imgResultErr
-		}
-	}
-	// At this point we know userRequestedImage is not empty; "" is accepted by neither HeuristicallyTryResolvingStringAsIDPrefix
-	// nor CandidatesForPotentiallyShortImageName. Just to be sure:
-	if userRequestedImage == "" {
-		return nil, errors.New("internal error: successfully found an image, but userRequestedImage is empty")
+	bundleName, err := bundle.ParseBundleName(userRequestedImage)
+	if err != nil {
+		return nil, err
 	}
 
-	someNameOfTheImage := imgResult.SomeNameOfThisImage
-	imageID := imgResult.ID
+	imgResult, err := s.StorageImageServer().ImageStatusByName(bundleName)
+	if err != nil {
+		return nil, err
+	}
+
+	imageID := bundle.BundleId(imgResult.Id)
 	someRepoDigest := ""
 	if len(imgResult.RepoDigests) > 0 {
 		someRepoDigest = imgResult.RepoDigests[0]
@@ -204,16 +110,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		return nil, err
 	}
 
-	containerIDMappings, err := s.getSandboxIDMappings(ctx, sb)
-	if err != nil {
-		return nil, err
-	}
-
-	var idMappingOptions *cstorage.IDMappingOptions
-	if containerIDMappings != nil {
-		idMappingOptions = &cstorage.IDMappingOptions{UIDMap: containerIDMappings.UIDs(), GIDMap: containerIDMappings.GIDs()}
-	}
-
 	metadata := containerConfig.Metadata
 
 	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container storage creation")
@@ -223,7 +119,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		containerName, containerID,
 		metadata.Name,
 		metadata.Attempt,
-		idMappingOptions,
 		labelOptions,
 		ctr.Privileged(),
 	)
@@ -494,7 +389,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	created := time.Now()
 	seccompRef := types.SecurityProfile_Unconfined.String()
 
-	if err := s.FilterDisallowedAnnotations(sb.Annotations(), imgResult.Annotations, sb.RuntimeHandler()); err != nil {
+	if err := s.FilterDisallowedAnnotations(sb.Annotations(), imgResult.Spec.Annotations, sb.RuntimeHandler()); err != nil {
 		return nil, fmt.Errorf("filter image annotations: %w", err)
 	}
 
@@ -509,7 +404,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 			containerID,
 			ctr.Config().Metadata.Name,
 			sb.Annotations(),
-			imgResult.Annotations,
+			imgResult.Spec.Annotations,
 			specgen,
 			securityContext.Seccomp,
 		)
@@ -588,10 +483,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	}
 
 	rootUID, rootGID := 0, 0
-	if containerIDMappings != nil {
-		rootPair := containerIDMappings.RootPair()
-		rootUID, rootGID = rootPair.UID, rootPair.GID
-	}
 
 	// Add secrets from the default and override mounts.conf files
 	secretMounts := subscriptions.MountsWithUIDGID(
@@ -666,7 +557,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		Name:    metadata.Name,
 		Attempt: metadata.Attempt,
 	}
-	ociContainer, err := oci.NewContainer(containerID, containerName, containerInfo.RunDir, logPath, labels, crioAnnotations, ctr.Config().Annotations, userRequestedImage, someNameOfTheImage, &imageID, someRepoDigest, criMetadata, sb.ID(), containerConfig.Tty, containerConfig.Stdin, containerConfig.StdinOnce, sb.RuntimeHandler(), containerInfo.Dir, created, containerImageConfig.Config.StopSignal)
+	ociContainer, err := oci.NewContainer(containerID, containerName, containerInfo.RunDir, logPath, labels, crioAnnotations, ctr.Config().Annotations, userRequestedImage, &bundleName, &imageID, someRepoDigest, criMetadata, sb.ID(), containerConfig.Tty, containerConfig.Stdin, containerConfig.StdinOnce, sb.RuntimeHandler(), containerInfo.Dir, created, containerImageConfig.Config.StopSignal)
 	if err != nil {
 		return nil, err
 	}
@@ -676,23 +567,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 
 	ociContainer.AddManagedPIDNamespace(ctr.PidNamespace())
 
-	ociContainer.SetIDMappings(containerIDMappings)
-	if containerIDMappings != nil {
-		s.finalizeUserMapping(sb, specgen, containerIDMappings)
-
-		for _, uidmap := range containerIDMappings.UIDs() {
-			specgen.AddLinuxUIDMapping(uint32(uidmap.HostID), uint32(uidmap.ContainerID), uint32(uidmap.Size))
-		}
-		for _, gidmap := range containerIDMappings.GIDs() {
-			specgen.AddLinuxGIDMapping(uint32(gidmap.HostID), uint32(gidmap.ContainerID), uint32(gidmap.Size))
-		}
-
-		for _, path := range []string{mountPoint, containerInfo.RunDir} {
-			if err := makeAccessible(path, rootUID, rootGID); err != nil {
-				return nil, fmt.Errorf("cannot make %s accessible to %d:%d: %w", path, rootUID, rootGID, err)
-			}
-		}
-	} else if err := specgen.RemoveLinuxNamespace(string(rspec.UserNamespace)); err != nil {
+	if err := specgen.RemoveLinuxNamespace(string(rspec.UserNamespace)); err != nil {
 		return nil, err
 	}
 	if v := sb.Annotations()[crioann.UmaskAnnotation]; v != "" {
@@ -732,9 +607,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	// Create the /etc directory only when it doesn't exist.
 	if _, err := os.Stat(etcPath); err != nil && os.IsNotExist(err) {
 		rootPair := idtools.IDPair{UID: 0, GID: 0}
-		if containerIDMappings != nil {
-			rootPair = containerIDMappings.RootPair()
-		}
 		if err := idtools.MkdirAllAndChown(etcPath, 0o755, rootPair); err != nil {
 			return nil, fmt.Errorf("failed to create container /etc directory: %w", err)
 		}
@@ -1139,11 +1011,11 @@ func (s *Server) mountImage(ctx context.Context, specgen *generate.Generator, im
 		return nil, fmt.Errorf("image %q does not exist locally", m.Image.Image)
 	}
 
-	imageID := status.ID.IDStringForOutOfProcessConsumptionOnly()
+	imageID := status.Id
 	log.Debugf(ctx, "Image ID to mount: %v", imageID)
 
 	options := []string{"ro", "noexec", "nosuid", "nodev"}
-	mountPoint, err := s.Store().MountImage(imageID, options, "")
+	mountPoint, err := s.StorageImageServer().MountImage(imageID, options, "")
 	if err != nil {
 		return nil, fmt.Errorf("mount storage: %w", err)
 	}

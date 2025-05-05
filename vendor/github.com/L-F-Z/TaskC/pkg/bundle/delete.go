@@ -66,7 +66,7 @@ func (bm *BundleManager) deleteByNameVersion(name string, version string) (err e
 		return fmt.Errorf("bundle %s (%s) not exists", name, version)
 	}
 
-	workDir := filepath.Join(bm.bundleDir, id)
+	workDir := filepath.Join(bm.bundleDir, string(id))
 	err = bm.umountOverlay(workDir)
 	if err != nil {
 		return fmt.Errorf("unable to umount %s (%s): [%v]", name, version, err)
@@ -79,6 +79,21 @@ func (bm *BundleManager) deleteByNameVersion(name string, version string) (err e
 	delete(bm.bundles[name], version)
 	if len(bm.bundles[name]) == 0 {
 		delete(bm.bundles, name)
+	}
+	return
+}
+
+func (bm *BundleManager) DeleteById(id BundleId) (err error) {
+	bm.Lock()
+	defer bm.Unlock()
+	defer bm.saveData()
+	for name, versions := range bm.bundles {
+		for version, bid := range versions {
+			if id == bid {
+				err = bm.deleteByNameVersion(name, version)
+				return
+			}
+		}
 	}
 	return
 }

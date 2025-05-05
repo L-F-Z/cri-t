@@ -3,60 +3,31 @@ package server
 import (
 	"context"
 	"fmt"
-	"path"
 	"time"
 
-	"github.com/containers/storage"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	crioStorage "github.com/L-F-Z/cri-t/utils"
 )
 
-func getStorageFsInfo(store storage.Store) (*types.ImageFsInfoResponse, error) {
-	rootPath := store.GraphRoot()
-	imagePath := store.ImageStore()
-	storageDriver := store.GraphDriverName()
-	var graphRootPath string
-	if imagePath == "" {
-		graphRootPath = path.Join(rootPath, storageDriver+"-images")
-	} else {
-		graphRootPath = path.Join(rootPath, storageDriver+"-containers")
-	}
-
-	graphUsage, err := getUsage(graphRootPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get usage for %s: %w", graphRootPath, err)
-	}
-
-	if imagePath == "" {
-		return &types.ImageFsInfoResponse{
-			ImageFilesystems:     []*types.FilesystemUsage{graphUsage},
-			ContainerFilesystems: []*types.FilesystemUsage{graphUsage},
-		}, nil
-	}
-	resp := &types.ImageFsInfoResponse{
-		ContainerFilesystems: []*types.FilesystemUsage{graphUsage},
-	}
-
-	imageRoot := path.Join(imagePath, storageDriver+"-images")
-	imageUsage, err := getUsage(imageRoot)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get usage for %s: %w", imageRoot, err)
-	}
-
-	resp.ImageFilesystems = []*types.FilesystemUsage{imageUsage}
-	return resp, nil
-}
-
 // ImageFsInfo returns information of the filesystem that is used to store images.
 func (s *Server) ImageFsInfo(context.Context, *types.ImageFsInfoRequest) (*types.ImageFsInfoResponse, error) {
-	store := s.StorageImageServer().GetStore()
-	fsUsage, err := getStorageFsInfo(store)
+	// TODO: move this function to TaskC
+	bundleRoot := "/var/lib/taskc/Bundle"
+	instanceRoot := "/var/lib/taskc/Instance"
+	bundleUsage, err := getUsage(bundleRoot)
 	if err != nil {
-		return nil, fmt.Errorf("get image fs info %w", err)
+		return nil, fmt.Errorf("unable to get usage for %s: %w", bundleRoot, err)
+	}
+	instanceUsage, err := getUsage(instanceRoot)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get usage for %s: %w", instanceRoot, err)
 	}
 
-	return fsUsage, nil
+	return &types.ImageFsInfoResponse{
+		ImageFilesystems:     []*types.FilesystemUsage{bundleUsage},
+		ContainerFilesystems: []*types.FilesystemUsage{instanceUsage},
+	}, nil
 }
 
 func getUsage(containerPath string) (*types.FilesystemUsage, error) {

@@ -2,16 +2,15 @@ package statsserver
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
-	cstorage "github.com/containers/storage"
 	"github.com/sirupsen/logrus"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
 	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/storage"
 	"github.com/L-F-Z/cri-t/pkg/config"
 )
 
@@ -35,7 +34,7 @@ type StatsServer struct {
 // data duplication (mainly in the active list of sandboxes), and avoid circular dependencies to boot.
 type parentServerIface interface {
 	Runtime() *oci.Runtime
-	Store() cstorage.Store
+	StorageRuntimeServer() storage.RuntimeServer
 	ListSandboxes() []*sandbox.Sandbox
 	GetSandbox(string) *sandbox.Sandbox
 	Config() *config.Config
@@ -119,20 +118,9 @@ func (ss *StatsServer) writableLayerForContainer(container *oci.Container) (*typ
 		Timestamp: time.Now().UnixNano(),
 		FsId:      &types.FilesystemIdentifier{Mountpoint: container.MountPoint()},
 	}
-	driver, err := ss.Store().GraphDriver()
-	if err != nil {
-		return writableLayer, fmt.Errorf("unable to get graph driver for disk usage for container %s: %w", container.ID(), err)
-	}
-	storageContainer, err := ss.Store().Container(container.ID())
-	if err != nil {
-		return writableLayer, fmt.Errorf("unable to get storage container for disk usage for container %s: %w", container.ID(), err)
-	}
-	usage, err := driver.ReadWriteDiskUsage(storageContainer.LayerID)
-	if err != nil {
-		return writableLayer, fmt.Errorf("unable to get disk usage for container %s: %w", container.ID(), err)
-	}
-	writableLayer.UsedBytes = &types.UInt64Value{Value: uint64(usage.Size)}
-	writableLayer.InodesUsed = &types.UInt64Value{Value: uint64(usage.InodeCount)}
+	size, inode := ss.StorageRuntimeServer().InstanceServer().GetUsage(container.ID())
+	writableLayer.UsedBytes = &types.UInt64Value{Value: uint64(size)}
+	writableLayer.InodesUsed = &types.UInt64Value{Value: uint64(inode)}
 
 	return writableLayer, nil
 }

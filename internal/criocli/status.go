@@ -143,19 +143,7 @@ func info(c *cli.Context) error {
 	}
 
 	fmt.Printf("cgroup driver: %s\n", info.CgroupDriver)
-	fmt.Printf("storage driver: %s\n", info.StorageDriver)
 	fmt.Printf("storage graph root: %s\n", info.StorageRoot)
-	fmt.Printf("storage image: %s\n", info.StorageImage)
-
-	fmt.Printf("default GID mappings (format <container>:<host>:<size>):\n")
-	for _, m := range info.DefaultIDMappings.Gids {
-		fmt.Printf("  %d:%d:%d\n", m.ContainerID, m.HostID, m.Size)
-	}
-	fmt.Printf("default UID mappings (format <container>:<host>:<size>):\n")
-	for _, m := range info.DefaultIDMappings.Uids {
-		fmt.Printf("  %d:%d:%d\n", m.ContainerID, m.HostID, m.Size)
-	}
-
 	return nil
 }
 

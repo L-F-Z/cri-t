@@ -91,11 +91,6 @@ func (mgr *NamespaceManager) NewPodNamespaces(cfg *PodNamespacesConfig) ([]Names
 		pinnsArgs = append(pinnsArgs, "-s", fmt.Sprintf("%s=%s", key, value))
 	}
 
-	var rootPair idtools.IDPair
-	if cfg.IDMappings != nil {
-		rootPair = cfg.IDMappings.RootPair()
-	}
-
 	for _, ns := range cfg.Namespaces {
 		arg, ok := typeToArg[ns.Type]
 		if !ok {
@@ -106,17 +101,6 @@ func (mgr *NamespaceManager) NewPodNamespaces(cfg *PodNamespacesConfig) ([]Names
 		}
 		pinnsArgs = append(pinnsArgs, arg)
 		ns.Path = filepath.Join(mgr.namespacesDir, string(ns.Type)+"ns", pinnedNamespace)
-		if cfg.IDMappings != nil {
-			if err := chownDirToIDPair(ns.Path, rootPair); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if cfg.IDMappings != nil {
-		pinnsArgs = append(pinnsArgs,
-			"--uid-mapping="+getMappingsForPinns(cfg.IDMappings.UIDs()),
-			"--gid-mapping="+getMappingsForPinns(cfg.IDMappings.GIDs()))
 	}
 
 	logrus.Debugf("Calling pinns with %v", pinnsArgs)

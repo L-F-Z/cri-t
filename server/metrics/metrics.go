@@ -17,7 +17,6 @@ import (
 	"github.com/L-F-Z/cri-t/internal/cert"
 	"github.com/L-F-Z/cri-t/internal/log"
 	"github.com/L-F-Z/cri-t/internal/process"
-	"github.com/L-F-Z/cri-t/internal/storage/references"
 	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 	"github.com/L-F-Z/cri-t/server/metrics/collectors"
 )
@@ -357,7 +356,7 @@ func (m *Metrics) MetricImagePullsSkippedBytesAdd(add float64) {
 	c.Add(add)
 }
 
-func (m *Metrics) MetricImagePullsFailuresInc(image references.RegistryImageReference, label string) {
+func (m *Metrics) MetricImagePullsFailuresInc(label string) {
 	c, err := m.metricImagePullsFailureTotal.GetMetricWithLabelValues(label)
 	if err != nil {
 		logrus.Warnf("Unable to write image pull failures total metric: %v", err)
@@ -375,7 +374,7 @@ func (m *Metrics) MetricImageLayerReuseInc(layer string) {
 	c.Inc()
 }
 
-func (m *Metrics) MetricImagePullsSuccessesInc(name references.RegistryImageReference) {
+func (m *Metrics) MetricImagePullsSuccessesInc() {
 	m.metricImagePullsSuccessTotal.Inc()
 }
 

@@ -7,10 +7,9 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
+	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
 	"github.com/L-F-Z/cri-t/internal/oci"
-	"github.com/L-F-Z/cri-t/internal/storage"
-	"github.com/L-F-Z/cri-t/internal/storage/references"
 )
 
 type SpoofedNamespace struct {
@@ -53,18 +52,18 @@ var AllSpoofedNamespaces = []nsmgr.Namespace{
 }
 
 func ContainerWithPid(pid int) (*oci.Container, error) {
-	imageName, err := references.ParseRegistryImageReferenceFromOutOfProcessData("example.com/some-image:latest")
+	imageName, err := bundle.ParseBundleName("YOLO11 latest")
 	if err != nil {
 		return nil, err
 	}
-	imageID, err := storage.ParseStorageImageIDFromOutOfProcessData("2a03a6059f21e150ae84b0973863609494aad70f0a80eaeb64bddd8d92465812")
+	bundleID := bundle.BundleId("2a03a6059f21e150ae84b0973863609494aad70f0a80eaeb64bddd8d92465812")
 	if err != nil {
 		return nil, err
 	}
 	testContainer, err := oci.NewContainer("testid", "testname", "",
 		"/container/logs", map[string]string{},
 		map[string]string{}, map[string]string{}, "image",
-		&imageName, &imageID, "", &types.ContainerMetadata{},
+		&imageName, &bundleID, "", &types.ContainerMetadata{},
 		"testsandboxid", false, false, false, "",
 		"/root/for/container", time.Now(), "SIGKILL")
 	if err != nil {

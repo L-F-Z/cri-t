@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"time"
 
 	json "github.com/json-iterator/go"
 	spec "github.com/opencontainers/runtime-spec/specs-go"
@@ -36,11 +35,11 @@ func (s *Server) ContainerStatus(ctx context.Context, req *types.ContainerStatus
 	imageRef := c.CRIContainer().ImageRef
 	imageNameInSpec := ""
 	if someNameOfTheImage := c.SomeNameOfTheImage(); someNameOfTheImage != nil {
-		imageNameInSpec = someNameOfTheImage.StringForOutOfProcessConsumptionOnly()
+		imageNameInSpec = someNameOfTheImage.String()
 	}
 	imageID := ""
 	if c.ImageID() != nil {
-		imageID = c.ImageID().IDStringForOutOfProcessConsumptionOnly()
+		imageID = (*c.ImageID()).String()
 	}
 	resp := &types.ContainerStatusResponse{
 		Status: &types.ContainerStatus{
@@ -143,11 +142,6 @@ type containerInfo struct {
 	Privileged  bool      `json:"privileged"`
 }
 
-type containerInfoCheckpointRestore struct {
-	CheckpointedAt time.Time `json:"checkpointedAt"`
-	Restored       bool      `json:"restored"`
-}
-
 func (s *Server) createContainerInfo(container *oci.Container) (map[string]string, error) {
 	metadata, err := s.StorageRuntimeServer().GetContainerMetadata(container.ID())
 	if err != nil {
@@ -160,21 +154,6 @@ func (s *Server) createContainerInfo(container *oci.Container) (map[string]strin
 			Pid:         container.StateNoLock().InitPid,
 			RuntimeSpec: container.Spec(),
 			Privileged:  metadata.Privileged,
-		}
-
-		if s.config.CheckpointRestore() {
-			localContainerInfoCheckpointRestore := containerInfoCheckpointRestore{
-				CheckpointedAt: container.CheckpointedAt(),
-				Restored:       container.Restore(),
-			}
-			info := struct {
-				containerInfo
-				containerInfoCheckpointRestore
-			}{
-				localContainerInfo,
-				localContainerInfoCheckpointRestore,
-			}
-			return json.Marshal(info)
 		}
 
 		return json.Marshal(localContainerInfo)

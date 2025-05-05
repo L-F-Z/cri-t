@@ -84,12 +84,6 @@ func mergeConfig(config *libconfig.Config, ctx *cli.Context) error {
 	if ctx.IsSet("runroot") {
 		config.RunRoot = ctx.String("runroot")
 	}
-	if ctx.IsSet("storage-driver") {
-		config.Storage = ctx.String("storage-driver")
-	}
-	if ctx.IsSet("storage-opt") {
-		config.StorageOptions = StringSliceTrySplit(ctx, "storage-opt")
-	}
 	if ctx.IsSet("default-transport") {
 		config.DefaultTransport = ctx.String("default-transport")
 	}
@@ -154,9 +148,6 @@ func mergeConfig(config *libconfig.Config, ctx *cli.Context) error {
 	}
 	if ctx.IsSet("selinux") {
 		config.SELinux = ctx.Bool("selinux")
-	}
-	if ctx.IsSet("imagestore") {
-		config.ImageStore = ctx.String("imagestore")
 	}
 	if ctx.IsSet("seccomp-profile") {
 		config.SeccompProfile = ctx.String("seccomp-profile")
@@ -271,9 +262,6 @@ func mergeConfig(config *libconfig.Config, ctx *cli.Context) error {
 	}
 	if ctx.IsSet("container-exits-dir") {
 		config.ContainerExitsDir = ctx.String("container-exits-dir")
-	}
-	if ctx.IsSet("enable-criu-support") {
-		config.EnableCriuSupport = ctx.Bool("enable-criu-support")
 	}
 	if ctx.IsSet("ctr-stop-timeout") {
 		config.CtrStopTimeout = ctx.Int64("ctr-stop-timeout")
@@ -560,25 +548,6 @@ func getCrioFlags(defConf *libconfig.Config) []cli.Flag {
 			Value:     defConf.RunRoot,
 			EnvVars:   []string{"CONTAINER_RUNROOT"},
 			TakesFile: true,
-		},
-		&cli.StringFlag{
-			Name:      "imagestore",
-			Usage:     "Store newly pulled images in the specified path, rather than the path provided by --root.",
-			Value:     defConf.ImageStore,
-			EnvVars:   []string{"CONTAINER_IMAGESTORE"},
-			TakesFile: true,
-		},
-		&cli.StringFlag{
-			Name:    "storage-driver",
-			Aliases: []string{"s"},
-			Usage:   "OCI storage driver.",
-			EnvVars: []string{"CONTAINER_STORAGE_DRIVER"},
-		},
-		&cli.StringSliceFlag{
-			Name:    "storage-opt",
-			Value:   cli.NewStringSlice(defConf.StorageOptions...),
-			Usage:   "OCI storage driver option.",
-			EnvVars: []string{"CONTAINER_STORAGE_OPT"},
 		},
 		&cli.StringFlag{
 			Name:    "default-transport",
@@ -1105,12 +1074,6 @@ func getCrioFlags(defConf *libconfig.Config) []cli.Flag {
 			Usage:   "A list of pod metrics to include. Specify the names of the metrics to include in this list.",
 			EnvVars: []string{"CONTAINER_INCLUDED_POD_METRCIS"},
 			Value:   cli.NewStringSlice(defConf.IncludedPodMetrics...),
-		},
-		&cli.BoolFlag{
-			Name:    "enable-criu-support",
-			Usage:   "Enable CRIU integration, requires that the criu binary is available in $PATH.",
-			EnvVars: []string{"CONTAINER_ENABLE_CRIU_SUPPORT"},
-			Value:   false,
 		},
 		&cli.BoolFlag{
 			Name:    "enable-pod-events",

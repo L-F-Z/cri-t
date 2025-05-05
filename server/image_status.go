@@ -4,15 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	json "github.com/json-iterator/go"
-	specs "github.com/opencontainers/image-spec/specs-go/v1"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
+	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/log"
-	pkgstorage "github.com/L-F-Z/cri-t/internal/storage"
 )
 
 // ImageStatus returns the status of the image.
@@ -34,22 +31,14 @@ func (s *Server) ImageStatus(ctx context.Context, req *types.ImageStatusRequest)
 		return &types.ImageStatusResponse{}, nil
 	}
 
-	// Ensure that size is already defined
-	var size uint64
-	if status.Size == nil {
-		size = 0
-	} else {
-		size = *status.Size
-	}
-
 	resp := &types.ImageStatusResponse{
 		Image: &types.Image{
-			Id:          status.ID.IDStringForOutOfProcessConsumptionOnly(),
+			Id:          status.Id,
 			RepoTags:    status.RepoTags,
 			RepoDigests: status.RepoDigests,
-			Size_:       size,
+			Size_:       uint64(status.Size()),
 			Spec: &types.ImageSpec{
-				Annotations: status.Annotations,
+				Annotations: status.Spec.Annotations,
 			},
 			Pinned: status.Pinned,
 		},
@@ -61,88 +50,30 @@ func (s *Server) ImageStatus(ctx context.Context, req *types.ImageStatusRequest)
 		}
 		resp.Info = info
 	}
-	uid, username := getUserFromImage(status.User)
-	if uid != nil {
-		resp.Image.Uid = &types.Int64Value{Value: *uid}
-	}
-	resp.Image.Username = username
+	resp.Image.Uid = status.Uid
+	resp.Image.Username = status.Username
 	log.Infof(ctx, "Image status: %v", resp)
 	return resp, nil
 }
 
 // storageImageStatus calls ImageStatus for a k8s ImageSpec.
 // Returns (nil, nil) if image was not found.
-func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (*pkgstorage.ImageResult, error) {
-	if id := s.StorageImageServer().HeuristicallyTryResolvingStringAsIDPrefix(spec.Image); id != nil {
-		status, err := s.StorageImageServer().ImageStatusByID(*id)
-		if err != nil {
-			if errors.Is(err, errors.New("identifier is not an image")) {
-				log.Infof(ctx, "Image %s not found", spec.Image)
-				return nil, nil
-			}
-			log.Warnf(ctx, "Error getting status from %s: %v", spec.Image, err)
-			return nil, err
-		}
-		return status, nil
+func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (*types.Image, error) {
+	bundleName, err := bundle.ParseBundleName(spec.Image)
+	if err == nil {
+		return s.StorageImageServer().ImageStatusByName(bundleName)
 	}
-
-	potentialMatches, err := s.StorageImageServer().CandidatesForPotentiallyShortImageName(spec.Image)
-	if err != nil {
-		return nil, err
+	bundleName, err = bundle.ParseBundleName(spec.UserSpecifiedImage)
+	if err == nil {
+		return s.StorageImageServer().ImageStatusByName(bundleName)
 	}
-	var lastErr error
-	for _, name := range potentialMatches {
-		status, err := s.StorageImageServer().ImageStatusByName(name)
-		if err != nil {
-			if errors.Is(err, errors.New("identifier is not an image")) {
-				log.Debugf(ctx, "Can't find %s", name)
-				continue
-			}
-			log.Warnf(ctx, "Error getting status from %s: %v", name, err)
-			lastErr = err
-			continue
-		}
-		return status, nil
-	}
-	if lastErr != nil {
-		return nil, lastErr
-	}
-	// CandidatesForPotentiallyShortImageName returns at least one value if it doesn't fail.
-	// So, if we got here, there was at least one ErrNoSuchImage, and no other errors.
-	log.Infof(ctx, "Image %s not found", spec.Image)
-	return nil, nil
+	return s.StorageImageServer().ImageStatusByID(bundle.BundleId(spec.Image))
 }
 
-// getUserFromImage gets uid or user name of the image user.
-// If user is numeric, it will be treated as uid; or else, it is treated as user name.
-func getUserFromImage(user string) (id *int64, username string) {
-	// return both empty if user is not specified in the image.
-	if user == "" {
-		return nil, ""
-	}
-	// split instances where the id may contain user:group
-	user = strings.Split(user, ":")[0]
-	// user could be either uid or user name. Try to interpret as numeric uid.
-	uid, err := strconv.ParseInt(user, 10, 64)
+func createImageInfo(result *types.Image) (map[string]string, error) {
+	bytes, err := json.Marshal(result.Spec)
 	if err != nil {
-		// If user is non numeric, assume it's user name.
-		return nil, user
-	}
-	// If user is a numeric uid.
-	return &uid, ""
-}
-
-func createImageInfo(result *pkgstorage.ImageResult) (map[string]string, error) {
-	info := struct {
-		Labels    map[string]string `json:"labels,omitempty"`
-		ImageSpec *specs.Image      `json:"imageSpec"`
-	}{
-		result.Labels,
-		result.OCIConfig,
-	}
-	bytes, err := json.Marshal(info)
-	if err != nil {
-		return nil, fmt.Errorf("marshal data: %v: %w", info, err)
+		return nil, fmt.Errorf("marshal data: %w", err)
 	}
 	return map[string]string{"info": string(bytes)}, nil
 }

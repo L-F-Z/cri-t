@@ -5,13 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"runtime/debug"
 
-	"github.com/containers/storage/pkg/idtools"
 	"github.com/go-chi/chi/v5"
 	json "github.com/json-iterator/go"
 	"github.com/sirupsen/logrus"
@@ -23,36 +21,10 @@ import (
 	"github.com/L-F-Z/cri-t/utils"
 )
 
-func (s *Server) getIDMappingsInfo() types.IDMappings {
-	sizeMax := int64(int(^uint(0) >> 1))
-	if sizeMax > math.MaxUint32 {
-		sizeMax = math.MaxUint32
-	}
-
-	if s.defaultIDMappings == nil {
-		fullMapping := idtools.IDMap{
-			ContainerID: 0,
-			HostID:      0,
-			Size:        int(sizeMax),
-		}
-		return types.IDMappings{
-			Uids: []idtools.IDMap{fullMapping},
-			Gids: []idtools.IDMap{fullMapping},
-		}
-	}
-	return types.IDMappings{
-		Uids: s.defaultIDMappings.UIDs(),
-		Gids: s.defaultIDMappings.GIDs(),
-	}
-}
-
 func (s *Server) getInfo() types.CrioInfo {
 	return types.CrioInfo{
-		StorageDriver:     s.config.Storage,
-		StorageRoot:       s.config.Root,
-		StorageImage:      s.config.ImageStore,
-		CgroupDriver:      s.config.CgroupManager().Name(),
-		DefaultIDMappings: s.getIDMappingsInfo(),
+		StorageRoot:  s.config.Root,
+		CgroupDriver: s.config.CgroupManager().Name(),
 	}
 }
 
@@ -103,7 +75,7 @@ func (s *Server) getContainerInfo(ctx context.Context, id string, getContainerFu
 	}
 	image := ""
 	if someNameOfTheImage := ctr.SomeNameOfTheImage(); someNameOfTheImage != nil {
-		image = someNameOfTheImage.StringForOutOfProcessConsumptionOnly()
+		image = someNameOfTheImage.String()
 	}
 	imageRef := ctr.CRIContainer().ImageRef
 	return types.ContainerInfo{

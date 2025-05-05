@@ -1,9 +1,5 @@
 package types
 
-import (
-	"github.com/containers/storage/pkg/idtools"
-)
-
 // ContainerInfo stores information about containers.
 type ContainerInfo struct {
 	Name            string            `json:"name"`
@@ -20,17 +16,8 @@ type ContainerInfo struct {
 	IPs             []string          `json:"ip_addresses"`
 }
 
-// IDMappings specifies the ID mappings used for containers.
-type IDMappings struct {
-	Uids []idtools.IDMap `json:"uids"`
-	Gids []idtools.IDMap `json:"gids"`
-}
-
 // CrioInfo stores information about the crio daemon.
 type CrioInfo struct {
-	StorageDriver     string     `json:"storage_driver"`
-	StorageImage      string     `json:"storage_image"`
-	StorageRoot       string     `json:"storage_root"`
-	CgroupDriver      string     `json:"cgroup_driver"`
-	DefaultIDMappings IDMappings `json:"default_id_mappings"`
+	StorageRoot  string `json:"storage_root"`
+	CgroupDriver string `json:"cgroup_driver"`
 }

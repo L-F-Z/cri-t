@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	nspkg "github.com/containernetworking/plugins/pkg/ns"
-	"github.com/containers/storage/pkg/idtools"
 	"golang.org/x/sys/unix"
 )
 
@@ -21,7 +20,6 @@ func supportedNamespacesForPinning() []NSType {
 
 type PodNamespacesConfig struct {
 	Namespaces []*PodNamespaceConfig
-	IDMappings *idtools.IDMappings
 	Sysctls    map[string]string
 }
 

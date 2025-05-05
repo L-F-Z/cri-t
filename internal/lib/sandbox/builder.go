@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/storage/pkg/idtools"
 	"github.com/containers/storage/pkg/stringid"
 	"github.com/opencontainers/runtime-tools/generate"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -37,7 +36,7 @@ type Builder interface {
 	Name() string
 
 	// InitInfraContainer initializes the sandbox's infra container
-	InitInfraContainer(*libconfig.Config, *storage.ContainerInfo, *idtools.IDMappings) error
+	InitInfraContainer(*libconfig.Config, *storage.ContainerInfo) error
 
 	// Spec returns the infra container's generator.
 	// Must be called after InitInfraContainer.

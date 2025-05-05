@@ -44,7 +44,6 @@ type ContainerConfig struct {
 	RootfsImageName string    `json:"rootfsImageName,omitempty"`
 	OCIRuntime      string    `json:"runtime,omitempty"`
 	CreatedTime     time.Time `json:"createdTime"`
-	CheckpointedAt  time.Time `json:"checkpointedTime"`
 	RestoredAt      time.Time `json:"restoredTime"`
 	Restored        bool      `json:"restored"`
 }
