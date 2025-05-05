@@ -177,7 +177,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	// TODO: Pass interface instead of individual field.
 	s.resourceStore.SetStageForResource(ctx, sboxName, "sandbox storage creation")
 	pauseImage := s.config.ParsePauseImage()
-	podContainer, err := s.StorageRuntimeServer().CreatePodSandbox(
+	podContainer, err := s.StorageService().CreatePodSandbox(
 		sboxName, sboxID,
 		pauseImage,
 		containerName,
@@ -195,7 +195,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		return nil, fmt.Errorf("creating pod sandbox with name %q: %w", sboxName, err)
 	}
 	resourceCleaner.Add(ctx, "runSandbox: removing pod sandbox from storage: "+sboxID, func() error {
-		return s.StorageRuntimeServer().DeleteContainer(ctx, sboxID)
+		return s.StorageService().DeleteContainer(ctx, sboxID)
 	})
 
 	mountLabel := podContainer.MountLabel
@@ -537,12 +537,12 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	// TODO: Pass interface instead of individual field.
 	s.resourceStore.SetStageForResource(ctx, sboxName, "sandbox storage start")
 
-	mountPoint, err := s.StorageRuntimeServer().StartContainer(sboxID)
+	mountPoint, err := s.StorageService().StartContainer(sboxID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to mount container %s in pod sandbox %s(%s): %w", containerName, sb.Name(), sboxID, err)
 	}
 	resourceCleaner.Add(ctx, "runSandbox: stopping storage container for sandbox "+sboxID, func() error {
-		if err := s.StorageRuntimeServer().StopContainer(ctx, sboxID); err != nil {
+		if err := s.StorageService().StopContainer(ctx, sboxID); err != nil {
 			return fmt.Errorf("could not stop storage container: %s: %w", sboxID, err)
 		}
 		return nil

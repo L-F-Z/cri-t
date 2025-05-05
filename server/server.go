@@ -146,7 +146,7 @@ func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 	containersAndTheirImages := map[string]bundle.BundleId{}
-	containers, err := s.StorageRuntimeServer().InstanceServer().Containers()
+	containers, err := s.StorageService().Containers()
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Warnf(ctx, "Could not read containers and sandboxes: %v", err)
 	}
@@ -155,7 +155,7 @@ func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 	names := map[string][]string{}
 	deletedPods := map[string]*sandbox.Sandbox{}
 	for i := range containers {
-		metadata, err2 := s.StorageRuntimeServer().GetContainerMetadata(containers[i].ID)
+		metadata, err2 := s.StorageService().GetContainerMetadata(containers[i].ID)
 		if err2 != nil {
 			log.Warnf(ctx, "Error parsing metadata for %s: %v, ignoring", containers[i].ID, err2)
 			continue
@@ -197,7 +197,7 @@ func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 		}
 		log.Warnf(ctx, "Could not restore sandbox %s: %v", sbID, err)
 		for _, n := range names[sbID] {
-			if err := s.StorageRuntimeServer().InstanceServer().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
+			if err := s.StorageService().DeleteContainer(ctx, n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
 				log.Warnf(ctx, "Unable to delete container %s: %v", n, err)
 			}
 			// Release the infra container name and the pod name for future use
@@ -214,7 +214,7 @@ func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 				continue
 			}
 			for _, n := range names[k] {
-				if err := s.StorageRuntimeServer().InstanceServer().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
+				if err := s.StorageService().DeleteContainer(ctx, n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
 					log.Warnf(ctx, "Unable to delete container %s: %v", n, err)
 				}
 				// Release the container name for future use
@@ -236,7 +236,7 @@ func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 		}
 		log.Warnf(ctx, "Could not restore container %s: %v", containerID, err)
 		for _, n := range names[containerID] {
-			if err := s.StorageRuntimeServer().InstanceServer().DeleteContainer(n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
+			if err := s.StorageService().DeleteContainer(ctx, n); err != nil && !errors.Is(err, storageTypes.ErrNotAContainer) {
 				log.Warnf(ctx, "Unable to delete container %s: %v", n, err)
 			}
 			// Release the container name
@@ -302,10 +302,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 	// first, make sure we sync all the changes to the file system holding
 	// the graph root
-	if err := utils.Syncfs(s.StorageImageServer().Root()); err != nil {
+	if err := utils.Syncfs(s.StorageService().Root()); err != nil {
 		return fmt.Errorf("failed to sync graph root after shutting down: %w", err)
 	}
-	if err := utils.Syncfs(s.StorageRuntimeServer().InstanceServer().Root()); err != nil {
+	if err := utils.Syncfs(s.StorageService().Root()); err != nil {
 		return fmt.Errorf("failed to sync graph root after shutting down: %w", err)
 	}
 
@@ -533,7 +533,7 @@ func (s *Server) startReloadWatcher(ctx context.Context) {
 			}
 			// ImageServer compiles the list with regex for both
 			// pinned and sandbox/pause images, we need to update them
-			s.StorageImageServer().UpdatePinnedImagesList(append(s.config.PinnedImages, s.config.PauseImage))
+			s.StorageService().UpdatePinnedImagesList(append(s.config.PinnedImages, s.config.PauseImage))
 			log.Infof(ctx, "Configuration reload completed")
 			// Print the current configuration.
 			tomlConfig, err := s.config.ToString()
@@ -620,7 +620,7 @@ func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []bundle.
 	// disk usage gets too high.
 	if shouldWipeImages {
 		for img := range imageMapToDelete {
-			if err := s.StorageImageServer().DeleteImage(img); err != nil {
+			if err := s.StorageService().DeleteImage(img); err != nil {
 				log.Warnf(ctx, "Failed to remove image %s: %v", img, err)
 			}
 		}

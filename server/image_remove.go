@@ -37,5 +37,5 @@ func (s *Server) removeImage(ctx context.Context, imageRef string) (untagErr err
 		return err
 	}
 	// TODO: Add --image-volume support
-	return s.StorageImageServer().UntagImage(name)
+	return s.StorageService().UntagImage(name)
 }

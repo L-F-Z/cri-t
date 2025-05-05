@@ -143,7 +143,7 @@ type containerInfo struct {
 }
 
 func (s *Server) createContainerInfo(container *oci.Container) (map[string]string, error) {
-	metadata, err := s.StorageRuntimeServer().GetContainerMetadata(container.ID())
+	metadata, err := s.StorageService().GetContainerMetadata(container.ID())
 	if err != nil {
 		return nil, fmt.Errorf("getting container metadata: %w", err)
 	}

@@ -103,7 +103,7 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (bundle
 	}
 
 	// TODO: Cancel the pull if no progress is made
-	repoDigest, err := s.StorageImageServer().PullImage(ctx, name)
+	repoDigest, err := s.StorageService().PullImage(ctx, name)
 	if err != nil {
 		log.Debugf(ctx, "Error pulling image %s: %v", name, err)
 		tryIncrementImagePullFailureMetric(err)

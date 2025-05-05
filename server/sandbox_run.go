@@ -106,10 +106,10 @@ func getHostname(id, hostname string, hostNetwork bool) (string, error) {
 func (s *Server) setPodSandboxMountLabel(ctx context.Context, id, mountLabel string) error {
 	_, span := log.StartSpan(ctx)
 	defer span.End()
-	storageMetadata, err := s.StorageRuntimeServer().GetContainerMetadata(id)
+	storageMetadata, err := s.StorageService().GetContainerMetadata(id)
 	if err != nil {
 		return err
 	}
 	storageMetadata.SetMountLabel(mountLabel)
-	return s.StorageRuntimeServer().SetContainerMetadata(id, &storageMetadata)
+	return s.StorageService().SetContainerMetadata(id, &storageMetadata)
 }

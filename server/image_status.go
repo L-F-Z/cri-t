@@ -61,13 +61,13 @@ func (s *Server) ImageStatus(ctx context.Context, req *types.ImageStatusRequest)
 func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (*types.Image, error) {
 	bundleName, err := bundle.ParseBundleName(spec.Image)
 	if err == nil {
-		return s.StorageImageServer().ImageStatusByName(bundleName)
+		return s.StorageService().ImageStatusByName(bundleName)
 	}
 	bundleName, err = bundle.ParseBundleName(spec.UserSpecifiedImage)
 	if err == nil {
-		return s.StorageImageServer().ImageStatusByName(bundleName)
+		return s.StorageService().ImageStatusByName(bundleName)
 	}
-	return s.StorageImageServer().ImageStatusByID(bundle.BundleId(spec.Image))
+	return s.StorageService().ImageStatusByID(bundle.BundleId(spec.Image))
 }
 
 func createImageInfo(result *types.Image) (map[string]string, error) {

@@ -34,7 +34,7 @@ type StatsServer struct {
 // data duplication (mainly in the active list of sandboxes), and avoid circular dependencies to boot.
 type parentServerIface interface {
 	Runtime() *oci.Runtime
-	StorageRuntimeServer() storage.RuntimeServer
+	StorageService() *storage.StorageService
 	ListSandboxes() []*sandbox.Sandbox
 	GetSandbox(string) *sandbox.Sandbox
 	Config() *config.Config
@@ -118,7 +118,7 @@ func (ss *StatsServer) writableLayerForContainer(container *oci.Container) (*typ
 		Timestamp: time.Now().UnixNano(),
 		FsId:      &types.FilesystemIdentifier{Mountpoint: container.MountPoint()},
 	}
-	size, inode := ss.StorageRuntimeServer().InstanceServer().GetUsage(container.ID())
+	size, inode := ss.StorageService().GetUsage(container.ID())
 	writableLayer.UsedBytes = &types.UInt64Value{Value: uint64(size)}
 	writableLayer.InodesUsed = &types.UInt64Value{Value: uint64(inode)}
 

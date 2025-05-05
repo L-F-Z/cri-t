@@ -90,7 +90,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		return nil, err
 	}
 
-	imgResult, err := s.StorageImageServer().ImageStatusByName(bundleName)
+	imgResult, err := s.StorageService().ImageStatusByName(bundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	metadata := containerConfig.Metadata
 
 	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container storage creation")
-	containerInfo, err := s.StorageRuntimeServer().CreateContainer(
+	containerInfo, err := s.StorageService().CreateContainer(
 		sb.Name(), sb.ID(),
 		userRequestedImage, imageID,
 		containerName, containerID,
@@ -127,7 +127,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	defer func() {
 		if retErr != nil {
 			log.Infof(ctx, "CreateCtrLinux: deleting container %s from storage", containerInfo.ID)
-			if err := s.StorageRuntimeServer().DeleteContainer(ctx, containerInfo.ID); err != nil {
+			if err := s.StorageService().DeleteContainer(ctx, containerInfo.ID); err != nil {
 				log.Warnf(ctx, "Failed to cleanup container directory: %v", err)
 			}
 		}
@@ -184,7 +184,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	}
 
 	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container storage start")
-	mountPoint, err := s.StorageRuntimeServer().StartContainer(containerID)
+	mountPoint, err := s.StorageService().StartContainer(containerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to mount container %s(%s): %w", containerName, containerID, err)
 	}
@@ -192,7 +192,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	defer func() {
 		if retErr != nil {
 			log.Infof(ctx, "CreateCtrLinux: stopping storage container %s", containerID)
-			if err := s.StorageRuntimeServer().StopContainer(ctx, containerID); err != nil {
+			if err := s.StorageService().StopContainer(ctx, containerID); err != nil {
 				log.Warnf(ctx, "Couldn't stop storage container: %v: %v", containerID, err)
 			}
 		}
@@ -1014,7 +1014,7 @@ func (s *Server) mountImage(ctx context.Context, specgen *generate.Generator, im
 	log.Debugf(ctx, "Image ID to mount: %v", imageID)
 
 	options := []string{"ro", "noexec", "nosuid", "nodev"}
-	mountPoint, err := s.StorageImageServer().MountImage(imageID, options, "")
+	mountPoint, err := s.StorageService().MountImage(imageID, options, "")
 	if err != nil {
 		return nil, fmt.Errorf("mount storage: %w", err)
 	}

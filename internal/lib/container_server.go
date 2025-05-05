@@ -34,14 +34,13 @@ import (
 
 // ContainerServer implements the ImageServer.
 type ContainerServer struct {
-	runtime              *oci.Runtime
-	storageImageServer   storage.ImageServer
-	storageRuntimeServer storage.RuntimeServer
-	ctrNameIndex         *registrar.Registrar
-	ctrIDIndex           *truncindex.TruncIndex
-	podNameIndex         *registrar.Registrar
-	podIDIndex           *truncindex.TruncIndex
-	Hooks                *hooks.Manager
+	runtime        *oci.Runtime
+	storageService *storage.StorageService
+	ctrNameIndex   *registrar.Registrar
+	ctrIDIndex     *truncindex.TruncIndex
+	podNameIndex   *registrar.Registrar
+	podIDIndex     *truncindex.TruncIndex
+	Hooks          *hooks.Manager
 	*statsserver.StatsServer
 
 	stateLock sync.Locker
@@ -54,9 +53,9 @@ func (c *ContainerServer) Runtime() *oci.Runtime {
 	return c.runtime
 }
 
-// StorageImageServer returns the ImageServer for the ContainerServer.
-func (c *ContainerServer) StorageImageServer() storage.ImageServer {
-	return c.storageImageServer
+// StorageService returns the StorageService for the ContainerServer.
+func (c *ContainerServer) StorageService() *storage.StorageService {
+	return c.storageService
 }
 
 // CtrIDIndex returns the TruncIndex for the ContainerServer.
@@ -74,11 +73,6 @@ func (c *ContainerServer) Config() *libconfig.Config {
 	return c.config
 }
 
-// StorageRuntimeServer gets the runtime server for the ContainerServer.
-func (c *ContainerServer) StorageRuntimeServer() storage.RuntimeServer {
-	return c.storageRuntimeServer
-}
-
 // New creates a new ContainerServer with options provided.
 func New(ctx context.Context, configIface libconfig.Iface) (*ContainerServer, error) {
 	if configIface == nil {
@@ -89,12 +83,7 @@ func New(ctx context.Context, configIface libconfig.Iface) (*ContainerServer, er
 		return nil, errors.New("cannot create container server: interface is nil")
 	}
 
-	imageService, err := storage.GetImageService(ctx, config.Root)
-	if err != nil {
-		return nil, err
-	}
-
-	storageRuntimeService, err := storage.GetRuntimeService(ctx, config.Root, config.RunRoot, imageService)
+	storageService, err := storage.NewStorageService(ctx, config.Root, config.RunRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -110,15 +99,14 @@ func New(ctx context.Context, configIface libconfig.Iface) (*ContainerServer, er
 	}
 
 	c := &ContainerServer{
-		runtime:              runtime,
-		storageImageServer:   imageService,
-		storageRuntimeServer: storageRuntimeService,
-		ctrNameIndex:         registrar.NewRegistrar(),
-		ctrIDIndex:           truncindex.NewTruncIndex([]string{}),
-		podNameIndex:         registrar.NewRegistrar(),
-		podIDIndex:           truncindex.NewTruncIndex([]string{}),
-		Hooks:                newHooks,
-		stateLock:            &sync.Mutex{},
+		runtime:        runtime,
+		storageService: storageService,
+		ctrNameIndex:   registrar.NewRegistrar(),
+		ctrIDIndex:     truncindex.NewTruncIndex([]string{}),
+		podNameIndex:   registrar.NewRegistrar(),
+		podIDIndex:     truncindex.NewTruncIndex([]string{}),
+		Hooks:          newHooks,
+		stateLock:      &sync.Mutex{},
 		state: &containerServerState{
 			containers:      memorystore.New[*oci.Container](),
 			infraContainers: memorystore.New[*oci.Container](),
@@ -135,7 +123,7 @@ func New(ctx context.Context, configIface libconfig.Iface) (*ContainerServer, er
 func (c *ContainerServer) LoadSandbox(ctx context.Context, id string) (sb *sandbox.Sandbox, retErr error) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	config, err := c.storageRuntimeServer.InstanceServer().FromContainerDirectory(id, "config.json")
+	config, err := c.storageService.FromContainerDirectory(id, "config.json")
 	if err != nil {
 		return nil, err
 	}
@@ -255,12 +243,12 @@ func (c *ContainerServer) LoadSandbox(ctx context.Context, id string) (sb *sandb
 		}
 	}()
 
-	sandboxPath, err := c.storageRuntimeServer.InstanceServer().ContainerRunDirectory(id)
+	sandboxPath, err := c.storageService.ContainerRunDirectory(id)
 	if err != nil {
 		return sb, err
 	}
 
-	sandboxDir, err := c.storageRuntimeServer.InstanceServer().ContainerDirectory(id)
+	sandboxDir, err := c.storageService.ContainerDirectory(id)
 	if err != nil {
 		return sb, err
 	}
@@ -364,7 +352,7 @@ var ErrIsNonCrioContainer = errors.New("non CRI-O container")
 func (c *ContainerServer) LoadContainer(ctx context.Context, id string) (retErr error) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	config, err := c.storageRuntimeServer.InstanceServer().FromContainerDirectory(id, "config.json")
+	config, err := c.storageService.FromContainerDirectory(id, "config.json")
 	if err != nil {
 		return err
 	}
@@ -407,12 +395,12 @@ func (c *ContainerServer) LoadContainer(ctx context.Context, id string) (retErr 
 	stdin := isTrue(m.Annotations[annotations.Stdin])
 	stdinOnce := isTrue(m.Annotations[annotations.StdinOnce])
 
-	containerPath, err := c.storageRuntimeServer.InstanceServer().ContainerRunDirectory(id)
+	containerPath, err := c.storageService.ContainerRunDirectory(id)
 	if err != nil {
 		return err
 	}
 
-	containerDir, err := c.storageRuntimeServer.InstanceServer().ContainerDirectory(id)
+	containerDir, err := c.storageService.ContainerDirectory(id)
 	if err != nil {
 		return err
 	}

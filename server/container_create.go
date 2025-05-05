@@ -428,7 +428,7 @@ func (s *Server) CreateContainer(ctx context.Context, req *types.CreateContainer
 		return nil, err
 	}
 	resourceCleaner.Add(ctx, "createCtr: deleting container "+ctr.ID()+" from storage", func() error {
-		if err := s.StorageRuntimeServer().DeleteContainer(ctx, ctr.ID()); err != nil {
+		if err := s.StorageService().DeleteContainer(ctx, ctr.ID()); err != nil {
 			return fmt.Errorf("failed to cleanup container storage: %w", err)
 		}
 		return nil

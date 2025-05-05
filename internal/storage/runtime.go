@@ -41,135 +41,7 @@ var (
 	ErrLayerUnknown = errors.New("layer not known")
 )
 
-type runtimeService struct {
-	imageServer    ImageServer
-	instanceServer InstanceServer
-	ctx            context.Context
-}
-
-func (s *runtimeService) InstanceServer() *InstanceServer {
-	return &s.instanceServer
-}
-
-// ContainerInfo wraps a subset of information about a container: its ID and
-// the locations of its nonvolatile and volatile per-container directories,
-// along with a copy of the configuration blob from the image that was used to
-// create the container, if the image had a configuration.
-type ContainerInfo struct {
-	ID           string
-	Dir          string
-	RunDir       string
-	Config       *v1.Image
-	ProcessLabel string
-	MountLabel   string
-}
-
-// RuntimeServer wraps up various CRI-related activities into a reusable
-// implementation.
-type RuntimeServer interface {
-	InstanceServer() *InstanceServer
-	// CreatePodSandbox creates a pod infrastructure container, using the
-	// specified PodID for the infrastructure container's ID.  In the CRI
-	// view of things, a sandbox is distinct from its containers, including
-	// its infrastructure container, but at this level the sandbox is
-	// essentially the same as its infrastructure container, with a
-	// container's membership in a pod being signified by it listing the
-	// same pod ID in its metadata that the pod's other members do, and
-	// with the pod's infrastructure container having the same value for
-	// both its pod's ID and its container ID.
-	// Pointer arguments can be nil.  All other arguments are required.
-	CreatePodSandbox(podName, podID string, pauseImage bundle.BundleName, containerName, metadataName, uid, namespace string, attempt uint32, labelOptions []string, privileged bool) (ContainerInfo, error)
-
-	// GetContainerMetadata returns the metadata we've stored for a container.
-	GetContainerMetadata(idOrName string) (RuntimeContainerMetadata, error)
-	// SetContainerMetadata updates the metadata we've stored for a container.
-	SetContainerMetadata(idOrName string, metadata *RuntimeContainerMetadata) error
-
-	// CreateContainer creates a container with the specified ID.
-	// Pointer arguments can be nil.
-	// All other arguments are required.
-	CreateContainer(podName, podID, userRequestedImage string, imageID bundle.BundleId, containerName, containerID, metadataName string, attempt uint32, labelOptions []string, privileged bool) (ContainerInfo, error)
-	// DeleteContainer deletes a container, unmounting it first if need be.
-	DeleteContainer(ctx context.Context, idOrName string) error
-
-	// StartContainer makes sure a container's filesystem is mounted, and
-	// returns the location of its root filesystem, which is not guaranteed
-	// by lower-level drivers to never change.
-	StartContainer(idOrName string) (string, error)
-	// StopContainer attempts to unmount a container's root filesystem,
-	// freeing up any kernel resources which may be limited.
-	StopContainer(ctx context.Context, idOrName string) error
-
-	// GetWorkDir returns the path of a nonvolatile directory on the
-	// filesystem (somewhere under the Store's Root directory) which can be
-	// used to store arbitrary data that is specific to the container.  It
-	// will be removed automatically when the container is deleted.
-	GetWorkDir(id string) (string, error)
-	// GetRunDir returns the path of a volatile directory (does not survive
-	// the host rebooting, somewhere under the Store's RunRoot directory)
-	// on the filesystem which can be used to store arbitrary data that is
-	// specific to the container.  It will be removed automatically when
-	// the container is deleted.
-	GetRunDir(id string) (string, error)
-}
-
-// RuntimeContainerMetadata is the structure that we encode as JSON and store
-// in the metadata field of storage.Container objects.  It is used for
-// specifying attributes of pod sandboxes and containers when they are being
-// created, and allows a container's MountLabel, and possibly other values, to
-// be modified in one read/write cycle via calls to
-// RuntimeServer.ContainerMetadata, RuntimeContainerMetadata.SetMountLabel,
-// and RuntimeServer.SetContainerMetadata.
-type RuntimeContainerMetadata struct {
-	// The pod's name and ID, kept for use by upper layers in determining
-	// which containers belong to which pods.
-	PodName string `json:"pod-name"` // Applicable to both PodSandboxes and Containers, mandatory
-	PodID   string `json:"pod-id"`   // Applicable to both PodSandboxes and Containers, mandatory
-	// The users' input originally used to find imageID; it might evaluate to a different image (or to a different kind of reference!) at any future time.
-	ImageName string `json:"image-name"` // Applicable to both PodSandboxes and Containers
-	// The ID of the image that was used to instantiate the container.
-	ImageID string `json:"image-id"` // Applicable to both PodSandboxes and Containers
-	// The container's name, which for an infrastructure container is usually PodName + "-infra".
-	ContainerName string `json:"name"` // Applicable to both PodSandboxes and Containers, mandatory
-	// The name as originally specified in PodSandbox or Container CRI metadata.
-	MetadataName string `json:"metadata-name"`        // Applicable to both PodSandboxes and Containers, mandatory
-	UID          string `json:"uid,omitempty"`        // Only applicable to pods
-	Namespace    string `json:"namespace,omitempty"`  // Only applicable to pods
-	MountLabel   string `json:"mountlabel,omitempty"` // Applicable to both PodSandboxes and Containers
-	CreatedAt    int64  `json:"created-at"`           // Applicable to both PodSandboxes and Containers
-	Attempt      uint32 `json:"attempt,omitempty"`    // Applicable to both PodSandboxes and Containers
-	// Pod is true if this is the pod's infrastructure container.
-	Pod        bool `json:"pod,omitempty"`        // Applicable to both PodSandboxes and Containers
-	Privileged bool `json:"privileged,omitempty"` // Applicable to both PodSandboxes and Containers
-}
-
-// SetMountLabel updates the mount label held by a RuntimeContainerMetadata
-// object.
-func (metadata *RuntimeContainerMetadata) SetMountLabel(mountLabel string) {
-	metadata.MountLabel = mountLabel
-}
-
-// runtimeContainerMetadataTemplate is an in-memory subset of RuntimeContainerMetadata.
-type runtimeContainerMetadataTemplate struct {
-	// The pod's name and ID, kept for use by upper layers in determining
-	// which containers belong to which pods.
-	podName string // Applicable to both PodSandboxes and Containers, mandatory
-	podID   string // Applicable to both PodSandboxes and Containers, mandatory
-	// The users' input originally used to find imageID; it might evaluate to a different image (or to a different kind of reference!) at any future time.
-	userRequestedImage string // Applicable to both PodSandboxes and Containers
-	// The ID of the image that was used to instantiate the container.
-	imageID bundle.BundleId // Applicable to both PodSandboxes and Containers. Should refer to an image which existed just now (but that can change at any time).
-	// The container's name, which for an infrastructure container is usually PodName + "-infra".
-	containerName string // Applicable to both PodSandboxes and Containers, mandatory
-	// The name as originally specified in PodSandbox or Container CRI metadata.
-	metadataName string // Applicable to both PodSandboxes and Containers. May be "", defaults to ContainerName in that case
-	uid          string // Only applicable to pods
-	namespace    string // Only applicable to pods
-	attempt      uint32 // Applicable to both PodSandboxes and Containers
-	privileged   bool   // Applicable to both PodSandboxes and Containers
-}
-
-func (r *runtimeService) createContainerOrPodSandbox(containerID string, template *runtimeContainerMetadataTemplate, labelOptions []string) (ci ContainerInfo, retErr error) {
+func (ss *StorageService) createContainerOrPodSandbox(containerID string, template *runtimeContainerMetadataTemplate, labelOptions []string) (ci ContainerInfo, retErr error) {
 	if template.podName == "" || template.podID == "" {
 		return ContainerInfo{}, ErrInvalidPodName
 	}
@@ -210,7 +82,7 @@ func (r *runtimeService) createContainerOrPodSandbox(containerID string, templat
 		names = append(names, metadata.PodName)
 	}
 
-	container, err := r.instanceServer.CreateContainer(containerID, names, template.imageID, string(mdata), labelOptions)
+	container, err := ss.createContainer(containerID, names, template.imageID, string(mdata), labelOptions)
 	if err != nil {
 		if metadata.Pod {
 			logrus.Debugf("Failed to create pod sandbox %s(%s): %v", metadata.PodName, metadata.PodID, err)
@@ -229,7 +101,7 @@ func (r *runtimeService) createContainerOrPodSandbox(containerID string, templat
 	// container before returning.
 	defer func() {
 		if retErr != nil {
-			if err2 := r.instanceServer.DeleteContainer(container.ID); err2 != nil {
+			if err2 := ss.deleteContainer(container.ID); err2 != nil {
 				if metadata.Pod {
 					logrus.Debugf("%v deleting partially-created pod sandbox %q", err2, container.ID)
 				} else {
@@ -242,7 +114,7 @@ func (r *runtimeService) createContainerOrPodSandbox(containerID string, templat
 	}()
 
 	// Find out where the container work directories are, so that we can return them.
-	containerDir, err := r.instanceServer.ContainerDirectory(container.ID)
+	containerDir, err := ss.ContainerDirectory(container.ID)
 	if err != nil {
 		return ContainerInfo{}, err
 	}
@@ -252,7 +124,7 @@ func (r *runtimeService) createContainerOrPodSandbox(containerID string, templat
 		logrus.Debugf("Container %q has work directory %q", container.ID, containerDir)
 	}
 
-	containerRunDir, err := r.instanceServer.ContainerRunDirectory(container.ID)
+	containerRunDir, err := ss.ContainerRunDirectory(container.ID)
 	if err != nil {
 		return ContainerInfo{}, err
 	}
@@ -274,13 +146,23 @@ func (r *runtimeService) createContainerOrPodSandbox(containerID string, templat
 	}, nil
 }
 
-func (r *runtimeService) CreatePodSandbox(podName, podID string, pauseImage bundle.BundleName, containerName, metadataName, uid, namespace string, attempt uint32, labelOptions []string, privileged bool) (ContainerInfo, error) {
+// CreatePodSandbox creates a pod infrastructure container, using the
+// specified PodID for the infrastructure container's ID.  In the CRI
+// view of things, a sandbox is distinct from its containers, including
+// its infrastructure container, but at this level the sandbox is
+// essentially the same as its infrastructure container, with a
+// container's membership in a pod being signified by it listing the
+// same pod ID in its metadata that the pod's other members do, and
+// with the pod's infrastructure container having the same value for
+// both its pod's ID and its container ID.
+// Pointer arguments can be nil.  All other arguments are required.
+func (ss *StorageService) CreatePodSandbox(podName, podID string, pauseImage bundle.BundleName, containerName, metadataName, uid, namespace string, attempt uint32, labelOptions []string, privileged bool) (ContainerInfo, error) {
 	// Check if we have the specified image.
 	var imageID bundle.BundleId
-	status, err := r.imageServer.ImageStatusByName(pauseImage)
+	status, err := ss.ImageStatusByName(pauseImage)
 	if err != nil {
 		var err error
-		imageID, err = r.imageServer.PullImage(context.Background(), pauseImage)
+		imageID, err = ss.PullImage(context.Background(), pauseImage)
 		if err != nil {
 			return ContainerInfo{}, err
 		}
@@ -288,7 +170,7 @@ func (r *runtimeService) CreatePodSandbox(podName, podID string, pauseImage bund
 		imageID, _ = bundle.ParseBundleId(status.Id)
 	}
 
-	return r.createContainerOrPodSandbox(podID, &runtimeContainerMetadataTemplate{
+	return ss.createContainerOrPodSandbox(podID, &runtimeContainerMetadataTemplate{
 		podName:            podName,
 		podID:              podID,
 		userRequestedImage: pauseImage.String(), // userRequestedImage is only used to write to container metadata on disk
@@ -302,8 +184,11 @@ func (r *runtimeService) CreatePodSandbox(podName, podID string, pauseImage bund
 	}, labelOptions)
 }
 
-func (r *runtimeService) CreateContainer(podName, podID, userRequestedImage string, imageID bundle.BundleId, containerName, containerID, metadataName string, attempt uint32, labelOptions []string, privileged bool) (ContainerInfo, error) {
-	return r.createContainerOrPodSandbox(containerID, &runtimeContainerMetadataTemplate{
+// CreateContainer creates a container with the specified ID.
+// Pointer arguments can be nil.
+// All other arguments are required.
+func (ss *StorageService) CreateContainer(podName, podID, userRequestedImage string, imageID bundle.BundleId, containerName, containerID, metadataName string, attempt uint32, labelOptions []string, privileged bool) (ContainerInfo, error) {
+	return ss.createContainerOrPodSandbox(containerID, &runtimeContainerMetadataTemplate{
 		podName:            podName,
 		podID:              podID,
 		userRequestedImage: userRequestedImage,
@@ -317,13 +202,14 @@ func (r *runtimeService) CreateContainer(podName, podID, userRequestedImage stri
 	}, labelOptions)
 }
 
-func (r *runtimeService) DeleteContainer(ctx context.Context, idOrName string) error {
+// DeleteContainer deletes a container, unmounting it first if need be.
+func (ss *StorageService) DeleteContainer(ctx context.Context, idOrName string) error {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 	if idOrName == "" {
 		return ErrInvalidContainerID
 	}
-	container, err := r.instanceServer.Container(idOrName)
+	container, err := ss.Container(idOrName)
 	// Already deleted
 	if errors.Is(err, ErrContainerUnknown) {
 		return nil
@@ -331,7 +217,7 @@ func (r *runtimeService) DeleteContainer(ctx context.Context, idOrName string) e
 	if err != nil {
 		return err
 	}
-	err = r.instanceServer.DeleteContainer(container.ID)
+	err = ss.deleteContainer(container.ID)
 	if err != nil {
 		log.Debugf(ctx, "Failed to delete container %q: %v", container.ID, err)
 		return err
@@ -339,18 +225,38 @@ func (r *runtimeService) DeleteContainer(ctx context.Context, idOrName string) e
 	return nil
 }
 
-func (r *runtimeService) SetContainerMetadata(idOrName string, metadata *RuntimeContainerMetadata) error {
+// CreateContainer creates a new container, optionally with the
+// specified ID (one will be assigned if none is specified), with
+// optional names, using the specified image's top layer as the basis
+// for the container's layer, and assigning the specified ID to that
+// layer (one will be created if none is specified).  A container is a
+// layer which is associated with additional bookkeeping information
+// which the library stores for the convenience of its caller.
+func (ss *StorageService) createContainer(id string, names []string, bundleId bundle.BundleId, metadata string, labelOptions []string) (*Container, error) {
+	return nil, nil
+}
+
+// DeleteContainer removes the specified container and its layer.  If
+// there is no matching container, or if the container exists but its
+// layer does not, an error will be returned.
+func (ss *StorageService) deleteContainer(id string) error {
+	return nil
+}
+
+// SetContainerMetadata updates the metadata we've stored for a container.
+func (ss *StorageService) SetContainerMetadata(idOrName string, metadata *RuntimeContainerMetadata) error {
 	mdata, err := json.Marshal(&metadata)
 	if err != nil {
 		logrus.Debugf("Failed to encode metadata for %q: %v", idOrName, err)
 		return err
 	}
-	return r.instanceServer.SetMetadata(idOrName, string(mdata))
+	return ss.SetMetadata(idOrName, string(mdata))
 }
 
-func (r *runtimeService) GetContainerMetadata(idOrName string) (RuntimeContainerMetadata, error) {
+// GetContainerMetadata returns the metadata we've stored for a container.
+func (ss *StorageService) GetContainerMetadata(idOrName string) (RuntimeContainerMetadata, error) {
 	metadata := RuntimeContainerMetadata{}
-	mdata, err := r.instanceServer.Metadata(idOrName)
+	mdata, err := ss.Metadata(idOrName)
 	if err != nil {
 		return metadata, err
 	}
@@ -360,8 +266,11 @@ func (r *runtimeService) GetContainerMetadata(idOrName string) (RuntimeContainer
 	return metadata, nil
 }
 
-func (r *runtimeService) StartContainer(idOrName string) (string, error) {
-	container, err := r.instanceServer.Container(idOrName)
+// StartContainer makes sure a container's filesystem is mounted, and
+// returns the location of its root filesystem, which is not guaranteed
+// by lower-level drivers to never change.
+func (ss *StorageService) StartContainer(idOrName string) (string, error) {
+	container, err := ss.Container(idOrName)
 	if err != nil {
 		if errors.Is(err, ErrContainerUnknown) {
 			return "", ErrInvalidContainerID
@@ -372,7 +281,7 @@ func (r *runtimeService) StartContainer(idOrName string) (string, error) {
 	if err := json.Unmarshal([]byte(container.Metadata), &metadata); err != nil {
 		return "", err
 	}
-	mountPoint, err := r.instanceServer.Mount(container.ID, metadata.MountLabel)
+	mountPoint, err := ss.Mount(container.ID, metadata.MountLabel)
 	if err != nil {
 		logrus.Debugf("Failed to mount container %q: %v", container.ID, err)
 		return "", err
@@ -381,13 +290,15 @@ func (r *runtimeService) StartContainer(idOrName string) (string, error) {
 	return mountPoint, nil
 }
 
-func (r *runtimeService) StopContainer(ctx context.Context, idOrName string) error {
+// StopContainer attempts to unmount a container's root filesystem,
+// freeing up any kernel resources which may be limited.
+func (ss *StorageService) StopContainer(ctx context.Context, idOrName string) error {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 	if idOrName == "" {
 		return ErrInvalidContainerID
 	}
-	container, err := r.instanceServer.Container(idOrName)
+	container, err := ss.Container(idOrName)
 	if err != nil {
 		if errors.Is(err, ErrContainerUnknown) {
 			log.Infof(ctx, "Container %s not known, assuming it got already removed", idOrName)
@@ -398,7 +309,7 @@ func (r *runtimeService) StopContainer(ctx context.Context, idOrName string) err
 		return err
 	}
 
-	if _, err := r.instanceServer.Unmount(container.ID, true); err != nil {
+	if _, err := ss.Unmount(container.ID, true); err != nil {
 		if errors.Is(err, ErrLayerUnknown) {
 			log.Infof(ctx, "Layer for container %s not known", container.ID)
 			return nil
@@ -412,34 +323,33 @@ func (r *runtimeService) StopContainer(ctx context.Context, idOrName string) err
 	return nil
 }
 
-func (r *runtimeService) GetWorkDir(id string) (string, error) {
-	container, err := r.instanceServer.Container(id)
+// GetWorkDir returns the path of a nonvolatile directory on the
+// filesystem (somewhere under the Store's Root directory) which can be
+// used to store arbitrary data that is specific to the container.  It
+// will be removed automatically when the container is deleted.
+func (ss *StorageService) GetWorkDir(id string) (string, error) {
+	container, err := ss.Container(id)
 	if err != nil {
 		if errors.Is(err, ErrContainerUnknown) {
 			return "", ErrInvalidContainerID
 		}
 		return "", err
 	}
-	return r.instanceServer.ContainerDirectory(container.ID)
+	return ss.ContainerDirectory(container.ID)
 }
 
-func (r *runtimeService) GetRunDir(id string) (string, error) {
-	container, err := r.instanceServer.Container(id)
+// GetRunDir returns the path of a volatile directory (does not survive
+// the host rebooting, somewhere under the Store's RunRoot directory)
+// on the filesystem which can be used to store arbitrary data that is
+// specific to the container.  It will be removed automatically when
+// the container is deleted.
+func (ss *StorageService) GetRunDir(id string) (string, error) {
+	container, err := ss.Container(id)
 	if err != nil {
 		if errors.Is(err, ErrContainerUnknown) {
 			return "", ErrInvalidContainerID
 		}
 		return "", err
 	}
-	return r.instanceServer.ContainerRunDirectory(container.ID)
-}
-
-// GetRuntimeService returns a RuntimeServer that uses the passed-in image
-// service to pull and manage images, and its store to manage containers based
-// on those images.
-func GetRuntimeService(ctx context.Context, root string, runRoot string, imageServer ImageServer) (RuntimeServer, error) {
-	return &runtimeService{
-		imageServer: imageServer,
-		ctx:         ctx,
-	}, nil
+	return ss.ContainerRunDirectory(container.ID)
 }

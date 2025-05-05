@@ -13,7 +13,7 @@ func (s *Server) ListImages(ctx context.Context, req *types.ListImagesRequest) (
 	_, span := log.StartSpan(ctx)
 	defer span.End()
 
-	results, err := s.StorageImageServer().ListImages()
+	results, err := s.StorageService().ListImages()
 	if err != nil {
 		return nil, err
 	}
