@@ -7,7 +7,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/containers/storage"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -964,52 +963,6 @@ var _ = t.Describe("Config", func() {
 
 			// Then
 			Expect(err).To(HaveOccurred())
-		})
-
-		It("should get default storage options when options are empty", func() {
-			if isRootless() {
-				Skip("this test does not work rootless")
-			}
-
-			// Given
-			defaultStore, err := storage.GetStore(storage.StoreOptions{})
-			Expect(err).ToNot(HaveOccurred())
-
-			sut.RootConfig.RunRoot = ""
-			sut.RootConfig.Root = ""
-			// this must be set in case pinns isn't downloaded to the $PATH
-			sut.RuntimeConfig.PinnsPath = alwaysPresentPath
-
-			// When
-			err = sut.Validate(true)
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-			Expect(sut.RootConfig.RunRoot).To(Equal(defaultStore.RunRoot()))
-			Expect(sut.RootConfig.Root).To(Equal(defaultStore.GraphRoot()))
-		})
-
-		It("should override default storage options", func() {
-			if isRootless() {
-				Skip("this test does not work rootless")
-			}
-
-			// Given
-			defaultStore, err := storage.GetStore(storage.StoreOptions{})
-			Expect(err).ToNot(HaveOccurred())
-
-			sut.RootConfig.RunRoot = alwaysPresentPath
-			sut.RootConfig.Root = alwaysPresentPath
-			// this must be set in case pinns isn't downloaded to the $PATH
-			sut.RuntimeConfig.PinnsPath = alwaysPresentPath
-
-			// When
-			err = sut.Validate(true)
-
-			// Then
-			Expect(err).ToNot(HaveOccurred())
-			Expect(sut.RootConfig.RunRoot).NotTo(Equal(defaultStore.RunRoot()))
-			Expect(sut.RootConfig.Root).NotTo(Equal(defaultStore.GraphRoot()))
 		})
 	})
 

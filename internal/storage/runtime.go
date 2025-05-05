@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/containers/storage"
 	json "github.com/json-iterator/go"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
@@ -13,6 +12,9 @@ import (
 	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/log"
 )
+
+const DefaultRoot = "/var/lib/taskc"
+const DefaultRunRoot = "/run/taskc"
 
 var (
 	// ErrInvalidPodName is returned when a pod name specified to a
@@ -31,6 +33,12 @@ var (
 	// function call is found to be invalid (because it's either
 	// empty or doesn't match a valid container).
 	ErrInvalidContainerID = errors.New("invalid container ID")
+	// ErrDuplicateName indicates that a name which is to be assigned to a new item is already being used.
+	ErrDuplicateName = errors.New("that name is already in use")
+	// ErrContainerUnknown indicates that there was no container with the specified name or ID.
+	ErrContainerUnknown = errors.New("container not known")
+	// ErrLayerUnknown indicates that there was no layer with the specified name or ID.
+	ErrLayerUnknown = errors.New("layer not known")
 )
 
 type runtimeService struct {
@@ -317,7 +325,7 @@ func (r *runtimeService) DeleteContainer(ctx context.Context, idOrName string) e
 	}
 	container, err := r.instanceServer.Container(idOrName)
 	// Already deleted
-	if errors.Is(err, storage.ErrContainerUnknown) {
+	if errors.Is(err, ErrContainerUnknown) {
 		return nil
 	}
 	if err != nil {
@@ -355,7 +363,7 @@ func (r *runtimeService) GetContainerMetadata(idOrName string) (RuntimeContainer
 func (r *runtimeService) StartContainer(idOrName string) (string, error) {
 	container, err := r.instanceServer.Container(idOrName)
 	if err != nil {
-		if errors.Is(err, storage.ErrContainerUnknown) {
+		if errors.Is(err, ErrContainerUnknown) {
 			return "", ErrInvalidContainerID
 		}
 		return "", err
@@ -381,7 +389,7 @@ func (r *runtimeService) StopContainer(ctx context.Context, idOrName string) err
 	}
 	container, err := r.instanceServer.Container(idOrName)
 	if err != nil {
-		if errors.Is(err, storage.ErrContainerUnknown) {
+		if errors.Is(err, ErrContainerUnknown) {
 			log.Infof(ctx, "Container %s not known, assuming it got already removed", idOrName)
 			return nil
 		}
@@ -391,7 +399,7 @@ func (r *runtimeService) StopContainer(ctx context.Context, idOrName string) err
 	}
 
 	if _, err := r.instanceServer.Unmount(container.ID, true); err != nil {
-		if errors.Is(err, storage.ErrLayerUnknown) {
+		if errors.Is(err, ErrLayerUnknown) {
 			log.Infof(ctx, "Layer for container %s not known", container.ID)
 			return nil
 		}
@@ -407,7 +415,7 @@ func (r *runtimeService) StopContainer(ctx context.Context, idOrName string) err
 func (r *runtimeService) GetWorkDir(id string) (string, error) {
 	container, err := r.instanceServer.Container(id)
 	if err != nil {
-		if errors.Is(err, storage.ErrContainerUnknown) {
+		if errors.Is(err, ErrContainerUnknown) {
 			return "", ErrInvalidContainerID
 		}
 		return "", err
@@ -418,7 +426,7 @@ func (r *runtimeService) GetWorkDir(id string) (string, error) {
 func (r *runtimeService) GetRunDir(id string) (string, error) {
 	container, err := r.instanceServer.Container(id)
 	if err != nil {
-		if errors.Is(err, storage.ErrContainerUnknown) {
+		if errors.Is(err, ErrContainerUnknown) {
 			return "", ErrInvalidContainerID
 		}
 		return "", err

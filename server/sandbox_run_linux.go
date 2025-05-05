@@ -12,7 +12,6 @@ import (
 
 	cnitypes "github.com/containernetworking/cni/pkg/types"
 	current "github.com/containernetworking/cni/pkg/types/100"
-	"github.com/containers/storage"
 	json "github.com/json-iterator/go"
 	spec "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
@@ -32,6 +31,7 @@ import (
 	oci "github.com/L-F-Z/cri-t/internal/oci"
 	"github.com/L-F-Z/cri-t/internal/resourcestore"
 	"github.com/L-F-Z/cri-t/internal/runtimehandlerhooks"
+	"github.com/L-F-Z/cri-t/internal/storage"
 	"github.com/L-F-Z/cri-t/pkg/annotations"
 	libconfig "github.com/L-F-Z/cri-t/pkg/config"
 	"github.com/L-F-Z/cri-t/utils"

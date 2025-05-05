@@ -18,7 +18,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/containers/common/pkg/hooks"
 	conmonconfig "github.com/containers/conmon/runner/config"
-	"github.com/containers/storage"
 	"github.com/cri-o/ocicni/pkg/ocicni"
 	"github.com/docker/go-units"
 	"github.com/opencontainers/runtime-spec/specs-go/features"
@@ -42,6 +41,7 @@ import (
 	"github.com/L-F-Z/cri-t/internal/config/seccomp"
 	"github.com/L-F-Z/cri-t/internal/config/ulimits"
 	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/storage"
 	"github.com/L-F-Z/cri-t/pkg/annotations"
 	"github.com/L-F-Z/cri-t/server/metrics/collectors"
 	"github.com/L-F-Z/cri-t/utils"
@@ -683,10 +683,6 @@ func (c *Config) UpdateFromFile(ctx context.Context, path string) error {
 // otherwise.
 func (c *Config) UpdateFromDropInFile(ctx context.Context, path string) error {
 	log.Infof(ctx, configLogPrefix+"drop-in file: %s", path)
-	// storage configurations from storage.conf, if crio config has no values for these, they will be merged to crio config
-	graphRoot := c.Root
-	runRoot := c.RunRoot
-
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -700,12 +696,11 @@ func (c *Config) UpdateFromDropInFile(ctx context.Context, path string) error {
 		return fmt.Errorf("unable to decode configuration %v: %w", path, err)
 	}
 
-	// inherits storage configurations from storage.conf
 	if t.Crio.Root == "" {
-		t.Crio.Root = graphRoot
+		t.Crio.Root = c.Root
 	}
 	if t.Crio.RunRoot == "" {
-		t.Crio.RunRoot = runRoot
+		t.Crio.RunRoot = c.RunRoot
 	}
 
 	t.toConfig(c)
@@ -775,16 +770,12 @@ func (c *Config) ToBytes() ([]byte, error) {
 
 // DefaultConfig returns the default configuration for crio.
 func DefaultConfig() (*Config, error) {
-	storeOpts, err := storage.DefaultStoreOptions()
-	if err != nil {
-		return nil, err
-	}
 	cgroupManager := cgmgr.New()
 	return &Config{
 		Comment: "# ",
 		RootConfig: RootConfig{
-			Root:              storeOpts.GraphRoot,
-			RunRoot:           storeOpts.RunRoot,
+			Root:              storage.DefaultRoot,
+			RunRoot:           storage.DefaultRunRoot,
 			LogDir:            "/var/log/crio/pods",
 			VersionFile:       CrioVersionPathTmp,
 			CleanShutdownFile: CrioCleanShutdownFile,
@@ -972,16 +963,6 @@ func (c *RootConfig) Validate(onExecution bool) error {
 		if err := os.MkdirAll(c.LogDir, 0o700); err != nil {
 			return fmt.Errorf("invalid log_dir: %w", err)
 		}
-		// store, err := c.GetStore()
-		// if err != nil {
-		// 	return fmt.Errorf("failed to get store to set defaults: %w", err)
-		// }
-		// This step merges the /etc/container/storage.conf with the
-		// storage configuration in crio.conf
-		// If we don't do this step, we risk returning the incorrect info
-		// on Inspect (/info) requests
-		// c.RunRoot = store.RunRoot()
-		// c.Root = store.GraphRoot()
 	}
 
 	return nil

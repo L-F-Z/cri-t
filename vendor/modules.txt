@@ -51,39 +51,10 @@ github.com/L-F-Z/TaskC/pkg/prefabservice/repointerface
 # github.com/Microsoft/go-winio v0.6.2
 ## explicit; go 1.21
 github.com/Microsoft/go-winio
-github.com/Microsoft/go-winio/backuptar
 github.com/Microsoft/go-winio/internal/fs
 github.com/Microsoft/go-winio/internal/socket
 github.com/Microsoft/go-winio/internal/stringbuffer
 github.com/Microsoft/go-winio/pkg/guid
-github.com/Microsoft/go-winio/vhd
-# github.com/Microsoft/hcsshim v0.12.9
-## explicit; go 1.22
-github.com/Microsoft/hcsshim
-github.com/Microsoft/hcsshim/computestorage
-github.com/Microsoft/hcsshim/internal/cow
-github.com/Microsoft/hcsshim/internal/hcs
-github.com/Microsoft/hcsshim/internal/hcs/schema1
-github.com/Microsoft/hcsshim/internal/hcs/schema2
-github.com/Microsoft/hcsshim/internal/hcserror
-github.com/Microsoft/hcsshim/internal/hns
-github.com/Microsoft/hcsshim/internal/interop
-github.com/Microsoft/hcsshim/internal/jobobject
-github.com/Microsoft/hcsshim/internal/log
-github.com/Microsoft/hcsshim/internal/logfields
-github.com/Microsoft/hcsshim/internal/longpath
-github.com/Microsoft/hcsshim/internal/memory
-github.com/Microsoft/hcsshim/internal/mergemaps
-github.com/Microsoft/hcsshim/internal/oc
-github.com/Microsoft/hcsshim/internal/protocol/guestrequest
-github.com/Microsoft/hcsshim/internal/queue
-github.com/Microsoft/hcsshim/internal/safefile
-github.com/Microsoft/hcsshim/internal/security
-github.com/Microsoft/hcsshim/internal/timeout
-github.com/Microsoft/hcsshim/internal/vmcompute
-github.com/Microsoft/hcsshim/internal/wclayer
-github.com/Microsoft/hcsshim/internal/winapi
-github.com/Microsoft/hcsshim/osversion
 # github.com/ProtonMail/go-crypto v1.1.3
 ## explicit; go 1.17
 github.com/ProtonMail/go-crypto/bitcurves
@@ -157,9 +128,6 @@ github.com/colega/zeropool
 ## explicit; go 1.17
 github.com/containerd/cgroups/stats/v1
 github.com/containerd/cgroups/v2/stats
-# github.com/containerd/cgroups/v3 v3.0.3
-## explicit; go 1.18
-github.com/containerd/cgroups/v3/cgroup1/stats
 # github.com/containerd/console v1.0.4
 ## explicit; go 1.13
 github.com/containerd/console
@@ -199,11 +167,6 @@ github.com/containerd/containerd/api/types/task
 # github.com/containerd/errdefs v0.3.0
 ## explicit; go 1.20
 github.com/containerd/errdefs
-# github.com/containerd/errdefs/pkg v0.3.0
-## explicit; go 1.22
-github.com/containerd/errdefs/pkg/errgrpc
-github.com/containerd/errdefs/pkg/internal/cause
-github.com/containerd/errdefs/pkg/internal/types
 # github.com/containerd/fifo v1.1.0
 ## explicit; go 1.18
 github.com/containerd/fifo
@@ -280,48 +243,21 @@ github.com/containers/conmon-rs/pkg/client
 github.com/containers/kubensmnt
 # github.com/containers/storage v1.57.2
 ## explicit; go 1.22.0
-github.com/containers/storage
-github.com/containers/storage/drivers
-github.com/containers/storage/drivers/aufs
-github.com/containers/storage/drivers/btrfs
-github.com/containers/storage/drivers/copy
-github.com/containers/storage/drivers/overlay
-github.com/containers/storage/drivers/overlayutils
-github.com/containers/storage/drivers/quota
-github.com/containers/storage/drivers/register
-github.com/containers/storage/drivers/vfs
-github.com/containers/storage/drivers/windows
-github.com/containers/storage/drivers/zfs
-github.com/containers/storage/internal/dedup
 github.com/containers/storage/pkg/archive
-github.com/containers/storage/pkg/chrootarchive
-github.com/containers/storage/pkg/chunked/dump
-github.com/containers/storage/pkg/chunked/internal/minimal
-github.com/containers/storage/pkg/chunked/internal/path
 github.com/containers/storage/pkg/config
-github.com/containers/storage/pkg/directory
 github.com/containers/storage/pkg/fileutils
-github.com/containers/storage/pkg/fsutils
-github.com/containers/storage/pkg/fsverity
 github.com/containers/storage/pkg/homedir
-github.com/containers/storage/pkg/idmap
 github.com/containers/storage/pkg/idtools
 github.com/containers/storage/pkg/ioutils
-github.com/containers/storage/pkg/locker
-github.com/containers/storage/pkg/lockfile
 github.com/containers/storage/pkg/longpath
-github.com/containers/storage/pkg/loopback
 github.com/containers/storage/pkg/mount
-github.com/containers/storage/pkg/parsers
 github.com/containers/storage/pkg/parsers/kernel
 github.com/containers/storage/pkg/pools
 github.com/containers/storage/pkg/promise
 github.com/containers/storage/pkg/reexec
 github.com/containers/storage/pkg/regexp
 github.com/containers/storage/pkg/stringid
-github.com/containers/storage/pkg/stringutils
 github.com/containers/storage/pkg/system
-github.com/containers/storage/pkg/tarlog
 github.com/containers/storage/pkg/truncindex
 github.com/containers/storage/pkg/unshare
 github.com/containers/storage/types
@@ -523,9 +459,6 @@ github.com/google/go-cmp/cmp/internal/value
 # github.com/google/go-github/v60 v60.0.0
 ## explicit; go 1.21
 github.com/google/go-github/v60/github
-# github.com/google/go-intervals v0.0.2
-## explicit; go 1.12
-github.com/google/go-intervals/intervalset
 # github.com/google/go-querystring v1.1.0
 ## explicit; go 1.10
 github.com/google/go-querystring/query
@@ -553,12 +486,6 @@ github.com/grpc-ecosystem/go-grpc-middleware
 github.com/grpc-ecosystem/grpc-gateway/v2/internal/httprule
 github.com/grpc-ecosystem/grpc-gateway/v2/runtime
 github.com/grpc-ecosystem/grpc-gateway/v2/utilities
-# github.com/hashicorp/errwrap v1.1.0
-## explicit
-github.com/hashicorp/errwrap
-# github.com/hashicorp/go-multierror v1.1.1
-## explicit; go 1.13
-github.com/hashicorp/go-multierror
 # github.com/intel/goresctrl v0.8.0
 ## explicit; go 1.20
 github.com/intel/goresctrl/pkg/blockio
@@ -609,9 +536,6 @@ github.com/mailru/easyjson/jwriter
 # github.com/mattn/go-shellwords v1.0.12
 ## explicit; go 1.13
 github.com/mattn/go-shellwords
-# github.com/mistifyio/go-zfs/v3 v3.0.1
-## explicit; go 1.14
-github.com/mistifyio/go-zfs/v3
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
@@ -832,11 +756,6 @@ github.com/uptrace/opentelemetry-go-extra/otelutil
 # github.com/urfave/cli/v2 v2.27.5
 ## explicit; go 1.18
 github.com/urfave/cli/v2
-# github.com/vbatts/tar-split v0.11.7
-## explicit; go 1.17
-github.com/vbatts/tar-split/archive/tar
-github.com/vbatts/tar-split/tar/asm
-github.com/vbatts/tar-split/tar/storage
 # github.com/vishvananda/netlink v1.3.0
 ## explicit; go 1.12
 github.com/vishvananda/netlink
@@ -862,13 +781,6 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
-# go.opencensus.io v0.24.0
-## explicit; go 1.13
-go.opencensus.io
-go.opencensus.io/internal
-go.opencensus.io/trace
-go.opencensus.io/trace/internal
-go.opencensus.io/trace/tracestate
 # go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.57.0
 ## explicit; go 1.22.7
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc

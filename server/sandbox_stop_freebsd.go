@@ -8,7 +8,7 @@ import (
 	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
 	"github.com/L-F-Z/cri-t/internal/log"
 	oci "github.com/L-F-Z/cri-t/internal/oci"
-	"github.com/containers/storage"
+	"github.com/L-F-Z/cri-t/internal/storage"
 	errorUtils "k8s.io/apimachinery/pkg/util/errors"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 )

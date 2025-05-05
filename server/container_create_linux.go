@@ -17,7 +17,6 @@ import (
 	"github.com/containers/common/pkg/timezone"
 	"github.com/containers/storage/pkg/idtools"
 	"github.com/containers/storage/pkg/mount"
-	"github.com/containers/storage/pkg/unshare"
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/intel/goresctrl/pkg/blockio"
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
@@ -492,7 +491,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		mountPoint,
 		rootUID,
 		rootGID,
-		unshare.IsRootless(),
+		false, // not rootless
 		ctr.DisableFips(),
 	)
 

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/containers/storage/pkg/unshare"
 	systemdDbus "github.com/coreos/go-systemd/v22/dbus"
 	"github.com/godbus/dbus/v5"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
@@ -50,7 +49,7 @@ func NewSystemdManager() *SystemdManager {
 		systemdMgr.v1CtrCgMgr = make(map[string]cgroups.Manager)
 		systemdMgr.v1SbCgMgr = make(map[string]cgroups.Manager)
 	}
-	systemdMgr.dbusMgr = dbusmgr.NewDbusConnManager(unshare.IsRootless())
+	systemdMgr.dbusMgr = dbusmgr.NewDbusConnManager(false)
 
 	return &systemdMgr
 }

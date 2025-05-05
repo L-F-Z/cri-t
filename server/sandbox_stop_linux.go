@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/containers/storage"
 	errorUtils "k8s.io/apimachinery/pkg/util/errors"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
@@ -14,6 +13,7 @@ import (
 	"github.com/L-F-Z/cri-t/internal/linklogs"
 	"github.com/L-F-Z/cri-t/internal/log"
 	oci "github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/storage"
 	ann "github.com/L-F-Z/cri-t/pkg/annotations"
 )
 

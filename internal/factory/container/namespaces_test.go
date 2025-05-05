@@ -3,7 +3,6 @@ package container_test
 import (
 	"os"
 
-	"github.com/containers/storage/pkg/unshare"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
@@ -167,10 +166,6 @@ var _ = t.Describe("Container:SpecAddNamespaces", func() {
 		Expect(found).To(BeTrue())
 	})
 	It("should use target PID namespace", func() {
-		if unshare.IsRootless() {
-			Skip("need to run as root")
-		}
-
 		// Given
 		ctrConfig := &types.ContainerConfig{
 			Metadata: &types.ContainerMetadata{Name: "name"},

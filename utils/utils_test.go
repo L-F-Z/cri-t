@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/storage/pkg/unshare"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -161,7 +160,7 @@ var _ = t.Describe("Utils", func() {
 		It("should fail unauthenticated", func() {
 			// Given
 			// When
-			err := utils.RunUnderSystemdScope(dbusmgr.NewDbusConnManager(unshare.IsRootless()), 1, "", "")
+			err := utils.RunUnderSystemdScope(dbusmgr.NewDbusConnManager(false), 1, "", "")
 
 			// Then
 			Expect(err).To(HaveOccurred())

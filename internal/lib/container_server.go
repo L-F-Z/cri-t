@@ -10,9 +10,7 @@ import (
 	"time"
 
 	"github.com/containers/common/pkg/hooks"
-	cstorage "github.com/containers/storage"
 	"github.com/containers/storage/pkg/ioutils"
-	cmount "github.com/containers/storage/pkg/mount"
 	"github.com/containers/storage/pkg/truncindex"
 	json "github.com/json-iterator/go"
 	rspec "github.com/opencontainers/runtime-spec/specs-go"
@@ -797,84 +795,4 @@ func ShutdownWasUnclean(config *libconfig.Config) bool {
 		return false
 	}
 	return true
-}
-
-func RemoveStorageDirectory(config *libconfig.Config, store cstorage.Store, force bool) error {
-	// If we do not do this, we may leak other resources that are not directly
-	// in the graphroot. Erroring here should not be fatal though, it's a best
-	// effort cleanup.
-	if err := store.Wipe(); err != nil {
-		logrus.Infof("Failed to wipe storage: %v", err)
-	}
-
-	// Unmount storage or else we will fail with -EBUSY.
-	if _, err := store.Shutdown(true); err != nil {
-		// CRI-O and Podman are often used together on the same node,
-		// so the storage directory is shared between the two.
-		//
-		// Since a container started by Podman can be running, we will
-		// try to detect this and return an error rather than proceed
-		// with a storage wipe.
-		//
-		// The storage directory removal can also be forced, which will
-		// then delete everything irregardless of whether there are any
-		// containers running at the moment.
-		if !force && errors.Is(err, cstorage.ErrLayerUsedByContainer) {
-			return fmt.Errorf("failed to shutdown storage: %w", err)
-		}
-		logrus.Warnf("Failed to shutdown storage: %v", err)
-
-		// At this point, storage is most likely corrupted
-		// beyond repair, as such, remove any potentially
-		// orphaned mounts that might still be there, and
-		// prepare to completely remove the storage directory.
-		if err := cmount.RecursiveUnmount(store.GraphRoot()); err != nil {
-			logrus.Warnf("Failed to unmount storage: %v", err)
-		}
-	}
-
-	// Completely remove storage, whatever is left (possibly orphaned layers).
-	if err := os.RemoveAll(store.GraphRoot()); err != nil {
-		return fmt.Errorf("failed to remove storage directory: %w", err)
-	}
-	return nil
-}
-
-// checkQuick returns custom storage check options with only checks known not to be
-// resource-intensive enabled. Where known I/O and CPU-bound checks, such as the
-// integrity and contents checks, are disabled.
-func checkQuick() *cstorage.CheckOptions {
-	// An alternative to `storage.CheckEverything()` and `storage.CheckMost()`
-	// helper functions that turn off the expensive layers integrity verification,
-	// which relies on calculating checksum for the content of the image. This is
-	// both I/O and CPU intensive and, depending on the size of images, number of
-	// layers, and number of files within each layer, can significantly impact the
-	// node performance while the check is running. Additionally, turn off the
-	// content check, which is also considered expensive.
-	//
-	// When the check runs, it can hold up CRI-O, eventually resulting in the node
-	// being marked as "NotReady" by the kubelet, which is undesirable.
-	//
-	// Turning off the integrity check has the side effect of preventing CRI-O from
-	// detecting whether a file is missing from the image or its content has changed.
-	return &cstorage.CheckOptions{
-		LayerDigests:   false, // Disabled for being I/O and CPU intensive.
-		LayerMountable: true,
-		LayerContents:  false, // Also disabled by `storage.CheckMost()`.
-		LayerData:      true,
-		ImageData:      true,
-		ContainerData:  true,
-	}
-}
-
-// CheckReportHasErrors checks if the report from a completed storage check includes
-// any recoverable errors that storage repair could fix.
-func CheckReportHasErrors(report cstorage.CheckReport) bool {
-	// The `storage.Check()` returns a report object and an error,
-	// where errors are most likely irrecoverable and should be
-	// handled as such; the report, on the contrary, can contain
-	// errors that the `storage.Repair()` could potentially fix.
-	return len(report.Layers) > 0 || len(report.ROLayers) > 0 ||
-		len(report.Images) > 0 || len(report.ROImages) > 0 ||
-		len(report.Containers) > 0
 }

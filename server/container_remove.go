@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/truncindex"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,6 +15,7 @@ import (
 	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
 	"github.com/L-F-Z/cri-t/internal/log"
 	"github.com/L-F-Z/cri-t/internal/oci"
+	"github.com/L-F-Z/cri-t/internal/storage"
 )
 
 // RemoveContainer removes the container. If the container is running, the container

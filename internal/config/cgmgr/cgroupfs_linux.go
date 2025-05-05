@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/containers/common/pkg/cgroups"
-	"github.com/containers/storage/pkg/unshare"
 	libctrCg "github.com/opencontainers/runc/libcontainer/cgroups"
 	libctrCgMgr "github.com/opencontainers/runc/libcontainer/cgroups/manager"
 	cgcfgs "github.com/opencontainers/runc/libcontainer/configs"
@@ -228,7 +227,7 @@ func setWorkloadSettings(cgPath string, resources *rspec.LinuxResources) (err er
 			SkipDevices: true,
 			CpusetCpus:  resources.CPU.Cpus,
 		},
-		Rootless: unshare.IsRootless(),
+		Rootless: false,
 	}
 	if resources.CPU.Shares != nil {
 		cg.Resources.CpuShares = *resources.CPU.Shares
