@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/L-F-Z/TaskC/pkg/bundle"
+	"github.com/L-F-Z/TaskC/pkg/libtc"
 	"github.com/L-F-Z/cri-t/internal/log"
 )
 
@@ -40,111 +41,6 @@ var (
 	// ErrLayerUnknown indicates that there was no layer with the specified name or ID.
 	ErrLayerUnknown = errors.New("layer not known")
 )
-
-func (ss *StorageService) createContainerOrPodSandbox(containerID string, template *runtimeContainerMetadataTemplate, labelOptions []string) (ci ContainerInfo, retErr error) {
-	if template.podName == "" || template.podID == "" {
-		return ContainerInfo{}, ErrInvalidPodName
-	}
-	if template.containerName == "" {
-		return ContainerInfo{}, ErrInvalidContainerName
-	}
-
-	// Build metadata to store with the container.
-	metadata := RuntimeContainerMetadata{
-		PodName:       template.podName,
-		PodID:         template.podID,
-		ImageName:     template.userRequestedImage,
-		ImageID:       string(template.imageID),
-		ContainerName: template.containerName,
-		MetadataName:  template.metadataName,
-		UID:           template.uid,
-		Namespace:     template.namespace,
-		MountLabel:    "",
-		// CreatedAt is set later
-		Attempt: template.attempt,
-		// Pod is set later
-		Privileged: template.privileged,
-	}
-	if metadata.MetadataName == "" {
-		metadata.MetadataName = metadata.ContainerName
-	}
-
-	metadata.Pod = (containerID == metadata.PodID) // Or should this be hard-coded in callers? The caller should know whether it is creating the infra container.
-	metadata.CreatedAt = time.Now().Unix()
-	mdata, err := json.Marshal(&metadata)
-	if err != nil {
-		return ContainerInfo{}, err
-	}
-
-	// Build the container.
-	names := []string{metadata.ContainerName}
-	if metadata.Pod {
-		names = append(names, metadata.PodName)
-	}
-
-	container, err := ss.createContainer(containerID, names, template.imageID, string(mdata), labelOptions)
-	if err != nil {
-		if metadata.Pod {
-			logrus.Debugf("Failed to create pod sandbox %s(%s): %v", metadata.PodName, metadata.PodID, err)
-		} else {
-			logrus.Debugf("Failed to create container %s(%s): %v", metadata.ContainerName, containerID, err)
-		}
-		return ContainerInfo{}, err
-	}
-	if metadata.Pod {
-		logrus.Debugf("Created pod sandbox %q", container.ID)
-	} else {
-		logrus.Debugf("Created container %q", container.ID)
-	}
-
-	// If anything fails after this point, we need to delete the incomplete
-	// container before returning.
-	defer func() {
-		if retErr != nil {
-			if err2 := ss.deleteContainer(container.ID); err2 != nil {
-				if metadata.Pod {
-					logrus.Debugf("%v deleting partially-created pod sandbox %q", err2, container.ID)
-				} else {
-					logrus.Debugf("%v deleting partially-created container %q", err2, container.ID)
-				}
-				return
-			}
-			logrus.Debugf("Deleted partially-created container %q", container.ID)
-		}
-	}()
-
-	// Find out where the container work directories are, so that we can return them.
-	containerDir, err := ss.ContainerDirectory(container.ID)
-	if err != nil {
-		return ContainerInfo{}, err
-	}
-	if metadata.Pod {
-		logrus.Debugf("Pod sandbox %q has work directory %q", container.ID, containerDir)
-	} else {
-		logrus.Debugf("Container %q has work directory %q", container.ID, containerDir)
-	}
-
-	containerRunDir, err := ss.ContainerRunDirectory(container.ID)
-	if err != nil {
-		return ContainerInfo{}, err
-	}
-	if metadata.Pod {
-		logrus.Debugf("Pod sandbox %q has run directory %q", container.ID, containerRunDir)
-	} else {
-		logrus.Debugf("Container %q has run directory %q", container.ID, containerRunDir)
-	}
-
-	// TODO: generate imageConfig from template.imageID
-	imageConfig := &v1.Image{}
-	return ContainerInfo{
-		ID:           container.ID,
-		Dir:          containerDir,
-		RunDir:       containerRunDir,
-		Config:       imageConfig,
-		ProcessLabel: container.ProcessLabel(),
-		MountLabel:   container.MountLabel(),
-	}, nil
-}
 
 // CreatePodSandbox creates a pod infrastructure container, using the
 // specified PodID for the infrastructure container's ID.  In the CRI
@@ -202,7 +98,125 @@ func (ss *StorageService) CreateContainer(podName, podID, userRequestedImage str
 	}, labelOptions)
 }
 
+func (ss *StorageService) createContainerOrPodSandbox(containerID string, template *runtimeContainerMetadataTemplate, labelOptions []string) (ci ContainerInfo, retErr error) {
+	if template.podName == "" || template.podID == "" {
+		return ContainerInfo{}, ErrInvalidPodName
+	}
+	if template.containerName == "" {
+		return ContainerInfo{}, ErrInvalidContainerName
+	}
+
+	// Build metadata to store with the container.
+	metadata := RuntimeContainerMetadata{
+		PodName:       template.podName,
+		PodID:         template.podID,
+		ImageName:     template.userRequestedImage,
+		ImageID:       string(template.imageID),
+		ContainerName: template.containerName,
+		MetadataName:  template.metadataName,
+		UID:           template.uid,
+		Namespace:     template.namespace,
+		MountLabel:    "",
+		// CreatedAt is set later
+		Attempt: template.attempt,
+		// Pod is set later
+		Privileged: template.privileged,
+	}
+	if metadata.MetadataName == "" {
+		metadata.MetadataName = metadata.ContainerName
+	}
+
+	metadata.Pod = (containerID == metadata.PodID) // Or should this be hard-coded in callers? The caller should know whether it is creating the infra container.
+	metadata.CreatedAt = time.Now().Unix()
+	mdata, err := json.Marshal(&metadata)
+	if err != nil {
+		return ContainerInfo{}, err
+	}
+
+	// Build the container.
+	names := []string{metadata.ContainerName}
+	if metadata.Pod {
+		names = append(names, metadata.PodName)
+	}
+
+	container, err := createContainer(containerID, names, template.imageID, string(mdata), labelOptions)
+	if err != nil {
+		if metadata.Pod {
+			logrus.Debugf("Failed to create pod sandbox %s(%s): %v", metadata.PodName, metadata.PodID, err)
+		} else {
+			logrus.Debugf("Failed to create container %s(%s): %v", metadata.ContainerName, containerID, err)
+		}
+		return ContainerInfo{}, err
+	}
+	if metadata.Pod {
+		logrus.Debugf("Created pod sandbox %q", container.ID)
+	} else {
+		logrus.Debugf("Created container %q", container.ID)
+	}
+
+	// If anything fails after this point, we need to delete the incomplete
+	// container before returning.
+	defer func() {
+		if retErr != nil {
+			if err2 := libtc.Remove(container.ID, ss.root); err2 != nil {
+				if metadata.Pod {
+					logrus.Debugf("%v deleting partially-created pod sandbox %q", err2, container.ID)
+				} else {
+					logrus.Debugf("%v deleting partially-created container %q", err2, container.ID)
+				}
+				return
+			}
+			logrus.Debugf("Deleted partially-created container %q", container.ID)
+		}
+	}()
+
+	// Find out where the container work directories are, so that we can return them.
+	containerDir, err := ss.ContainerDirectory(container.ID)
+	if err != nil {
+		return ContainerInfo{}, err
+	}
+	if metadata.Pod {
+		logrus.Debugf("Pod sandbox %q has work directory %q", container.ID, containerDir)
+	} else {
+		logrus.Debugf("Container %q has work directory %q", container.ID, containerDir)
+	}
+
+	containerRunDir, err := ss.ContainerRunDirectory(container.ID)
+	if err != nil {
+		return ContainerInfo{}, err
+	}
+	if metadata.Pod {
+		logrus.Debugf("Pod sandbox %q has run directory %q", container.ID, containerRunDir)
+	} else {
+		logrus.Debugf("Container %q has run directory %q", container.ID, containerRunDir)
+	}
+
+	// TODO: generate imageConfig from template.imageID
+	imageConfig := &v1.Image{}
+	return ContainerInfo{
+		ID:           container.ID,
+		Dir:          containerDir,
+		RunDir:       containerRunDir,
+		Config:       imageConfig,
+		ProcessLabel: container.ProcessLabel(),
+		MountLabel:   container.MountLabel(),
+	}, nil
+}
+
+// CreateContainer creates a new container, optionally with the
+// specified ID (one will be assigned if none is specified), with
+// optional names, using the specified image's top layer as the basis
+// for the container's layer, and assigning the specified ID to that
+// layer (one will be created if none is specified).  A container is a
+// layer which is associated with additional bookkeeping information
+// which the library stores for the convenience of its caller.
+func createContainer(id string, names []string, bundleId bundle.BundleId, metadata string, labelOptions []string) (*Container, error) {
+	return nil, nil
+}
+
 // DeleteContainer deletes a container, unmounting it first if need be.
+// If there is no matching container, or if the container exists but its
+// layer does not, an error will be returned.
 func (ss *StorageService) DeleteContainer(ctx context.Context, idOrName string) error {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
@@ -217,29 +231,12 @@ func (ss *StorageService) DeleteContainer(ctx context.Context, idOrName string) 
 	if err != nil {
 		return err
 	}
-	err = ss.deleteContainer(container.ID)
+	// TODO: Delete Container Here
+	err = libtc.Remove(container.ID, ss.root)
 	if err != nil {
 		log.Debugf(ctx, "Failed to delete container %q: %v", container.ID, err)
 		return err
 	}
-	return nil
-}
-
-// CreateContainer creates a new container, optionally with the
-// specified ID (one will be assigned if none is specified), with
-// optional names, using the specified image's top layer as the basis
-// for the container's layer, and assigning the specified ID to that
-// layer (one will be created if none is specified).  A container is a
-// layer which is associated with additional bookkeeping information
-// which the library stores for the convenience of its caller.
-func (ss *StorageService) createContainer(id string, names []string, bundleId bundle.BundleId, metadata string, labelOptions []string) (*Container, error) {
-	return nil, nil
-}
-
-// DeleteContainer removes the specified container and its layer.  If
-// there is no matching container, or if the container exists but its
-// layer does not, an error will be returned.
-func (ss *StorageService) deleteContainer(id string) error {
 	return nil
 }
 
