@@ -26,10 +26,8 @@ type Container struct {
 	// ImageID is the ID of the image which was used to create the container.
 	ImageID string `json:"image"`
 
-	// LayerID is the ID of the read-write layer for the container itself.
-	// It is assumed that the image's top layer is the parent of the container's
-	// read-write layer.
-	LayerID string `json:"layer"`
+	// RootFs of the container
+	RootFs string `json:"rootfs"`
 
 	// Metadata is data we keep for the convenience of the caller.  It is not
 	// expected to be large, since it is kept in memory.
@@ -52,6 +50,7 @@ type ContainerInfo struct {
 	ID           string
 	Dir          string
 	RunDir       string
+	RootFs       string
 	Config       *v1.Image
 	ProcessLabel string
 	MountLabel   string

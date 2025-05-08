@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,8 +14,9 @@ import (
 )
 
 type StorageService struct {
-	root                 string
-	runRoot              string
+	work                 string
+	run                  string
+	meta                 string
 	bm                   *bundle.BundleManager
 	regexForPinnedImages []*regexp.Regexp
 }
@@ -23,16 +26,26 @@ func NewStorageService(ctx context.Context, root string, runRoot string) (*Stora
 	if err != nil {
 		return &StorageService{}, err
 	}
+	workDir := filepath.Join(root, "containerWork")
+	metaDir := filepath.Join(root, "containerMeta")
+	runDir := filepath.Join(runRoot, "containerRun")
+	for _, path := range []string{workDir, metaDir, runDir} {
+		err := os.MkdirAll(path, 0o755)
+		if err != nil {
+			return &StorageService{}, err
+		}
+	}
 	return &StorageService{
-		root:                 root,
-		runRoot:              runRoot,
+		work:                 workDir,
+		run:                  runDir,
+		meta:                 metaDir,
 		bm:                   bm,
 		regexForPinnedImages: []*regexp.Regexp{},
 	}, nil
 }
 
 func (ss *StorageService) Root() string {
-	return ss.root
+	return ss.work
 }
 
 // ListImages returns list of all images.
@@ -328,88 +341,4 @@ func CompileRegexpsForPinnedImages(patterns []string) []*regexp.Regexp {
 	}
 
 	return regexps
-}
-
-// Container returns a specific container.
-func (ss *StorageService) Container(id string) (*Container, error) {
-	return nil, nil
-}
-
-// Containers returns a list of the currently known containers.
-func (ss *StorageService) Containers() ([]Container, error) {
-	return []Container{}, nil
-}
-
-// ContainerDirectory returns a path of a directory which the caller
-// can use to store data, specific to the container, which the library
-// does not directly manage.  The directory will be deleted when the
-// container is deleted.
-func (ss *StorageService) ContainerDirectory(id string) (string, error) {
-	return "", nil
-}
-
-// ContainerRunDirectory returns a path of a directory which the
-// caller can use to store data, specific to the container, which the
-// library does not directly manage.  The directory will be deleted
-// when the host system is restarted.
-func (ss *StorageService) ContainerRunDirectory(id string) (string, error) {
-	return "", nil
-}
-
-// Metadata retrieves the metadata which is associated with a layer,
-// image, or container (whichever the passed-in ID refers to).
-func (ss *StorageService) Metadata(id string) (string, error) {
-	return "", nil
-}
-
-// SetMetadata updates the metadata which is associated with a layer,
-// image, or container (whichever the passed-in ID refers to) to match
-// the specified value.  The metadata value can be retrieved at any
-// time using Metadata, or using Layer, Image, or Container and reading
-// the object directly.
-func (ss *StorageService) SetMetadata(id, metadata string) error {
-	return nil
-}
-
-func (ss *StorageService) GetUsage(id string) (bytesUsed uint64, inodeUsed uint64) {
-	return 0, 0
-}
-
-// Mount attempts to mount a layer, image, or container for access, and
-// returns the pathname if it succeeds.
-// Note if the mountLabel == "", the default label for the container
-// will be used.
-//
-// Note that we do some of this work in a child process.  The calling
-// process's main() function needs to import our pkg/reexec package and
-// should begin with something like this in order to allow us to
-// properly start that child process:
-//
-//	if reexec.Init() {
-//	    return
-//	}
-func (ss *StorageService) Mount(id, mountLabel string) (string, error) {
-	return "", nil
-}
-
-// Unmount attempts to unmount a layer, image, or container, given an ID, a
-// name, or a mount path. Returns whether or not the layer is still mounted.
-// WARNING: The return value may already be obsolete by the time it is available
-// to the caller, so it can be used for heuristic sanity checks at best. It should almost always be ignored.
-func (ss *StorageService) Unmount(id string, force bool) (bool, error) {
-	return true, nil
-}
-
-// FromContainerDirectory is a convenience function which reads
-// the contents of the specified file relative to the container's
-// directory.
-func (ss *StorageService) FromContainerDirectory(id, file string) ([]byte, error) {
-	return []byte{}, nil
-}
-
-// Tries to clean up remainders of previous containers or layers that are not
-// references in the json files. These can happen in the case of unclean
-// shutdowns or regular restarts in transient store mode.
-func (ss *StorageService) GarbageCollect() error {
-	return nil
 }

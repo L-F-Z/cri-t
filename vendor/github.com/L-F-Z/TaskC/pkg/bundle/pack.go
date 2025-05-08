@@ -43,7 +43,7 @@ func (bm *BundleManager) Pack(blueprint prefab.Blueprint, basePath string, dstDi
 			}
 
 			src := p.Specifier
-			p.Specifier = intToShortName(localCnt)
+			p.Specifier = utils.IntToShortName(localCnt)
 			localCnt++
 			dst := filepath.Join(saveDir, p.Specifier)
 			err = os.MkdirAll(dst, 0700)

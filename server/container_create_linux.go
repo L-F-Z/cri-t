@@ -183,21 +183,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		return nil, err
 	}
 
-	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container storage start")
-	mountPoint, err := s.StorageService().StartContainer(containerID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to mount container %s(%s): %w", containerName, containerID, err)
-	}
-
-	defer func() {
-		if retErr != nil {
-			log.Infof(ctx, "CreateCtrLinux: stopping storage container %s", containerID)
-			if err := s.StorageService().StopContainer(ctx, containerID); err != nil {
-				log.Warnf(ctx, "Couldn't stop storage container: %v: %v", containerID, err)
-			}
-		}
-	}()
-
 	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container spec configuration")
 
 	labels := containerConfig.Labels
@@ -432,7 +417,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	if err != nil {
 		return nil, err
 	}
-	err = ctr.SpecAddAnnotations(ctx, sb, containerVolumes, mountPoint, containerImageConfig.Config.StopSignal, imgResult, s.config.CgroupManager().IsSystemd(), seccompRef, runtimePath)
+	err = ctr.SpecAddAnnotations(ctx, sb, containerVolumes, containerInfo.RootFs, containerImageConfig.Config.StopSignal, imgResult, s.config.CgroupManager().IsSystemd(), seccompRef, runtimePath)
 	if err != nil {
 		return nil, err
 	}
@@ -454,13 +439,13 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 
 	// Setup user and groups
 	if linux != nil {
-		if err := setupContainerUser(ctx, specgen, mountPoint, mountLabel, containerInfo.RunDir, securityContext, containerImageConfig); err != nil {
+		if err := setupContainerUser(ctx, specgen, containerInfo.RootFs, mountLabel, containerInfo.RunDir, securityContext, containerImageConfig); err != nil {
 			return nil, err
 		}
 	}
 
 	// Add image volumes
-	volumeMounts, err := addImageVolumes(ctx, mountPoint, s, &containerInfo, mountLabel, specgen)
+	volumeMounts, err := addImageVolumes(ctx, containerInfo.RootFs, s, &containerInfo, mountLabel, specgen)
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +462,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		containerCwd = runtimeCwd
 	}
 	specgen.SetProcessCwd(containerCwd)
-	if err := setupWorkingDirectory(mountPoint, mountLabel, containerCwd); err != nil {
+	if err := setupWorkingDirectory(containerInfo.RootFs, mountLabel, containerCwd); err != nil {
 		return nil, err
 	}
 
@@ -488,7 +473,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		mountLabel,
 		containerInfo.RunDir,
 		s.config.DefaultMountsFile,
-		mountPoint,
+		containerInfo.RootFs,
 		rootUID,
 		rootGID,
 		false, // not rootless
@@ -548,7 +533,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	}
 
 	// by default, the root path is an empty string. set it now.
-	specgen.SetRootPath(mountPoint)
+	specgen.SetRootPath(containerInfo.RootFs)
 
 	crioAnnotations := specgen.Config.Annotations
 
@@ -582,7 +567,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		specgen.Config.Process.User.Umask = &umask
 	}
 
-	etcPath := filepath.Join(mountPoint, "/etc")
+	etcPath := filepath.Join(containerInfo.RootFs, "/etc")
 
 	// Warn users if the container /etc directory path points to a location
 	// that is not a regular directory. This could indicate that something
@@ -598,7 +583,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	// The /etc directory can be subjected to various attempts on the path (directory)
 	// traversal attacks. As such, we need to ensure that its path will be relative to
 	// the base (or root, if you wish) of the container to mitigate a container escape.
-	etcPath, err = securejoin.SecureJoin(mountPoint, "/etc")
+	etcPath, err = securejoin.SecureJoin(containerInfo.RootFs, "/etc")
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve container /etc directory path: %w", err)
 	}
@@ -623,7 +608,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	}
 
 	// Configure timezone for the container if it is set.
-	if err := configureTimezone(s.Runtime().Timezone(), ociContainer.BundlePath(), mountPoint, mountLabel, etcPath, ociContainer.ID(), options, ctr); err != nil {
+	if err := configureTimezone(s.Runtime().Timezone(), ociContainer.BundlePath(), containerInfo.RootFs, mountLabel, etcPath, ociContainer.ID(), options, ctr); err != nil {
 		return nil, fmt.Errorf("failed to configure timezone for container %s: %w", ociContainer.ID(), err)
 	}
 
@@ -668,7 +653,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	}
 
 	ociContainer.SetSpec(specgen.Config)
-	ociContainer.SetMountPoint(mountPoint)
+	ociContainer.SetMountPoint(containerInfo.RootFs)
 	ociContainer.SetSeccompProfilePath(seccompRef)
 	if runtimePath != "" {
 		ociContainer.SetRuntimePathForPlatform(runtimePath)

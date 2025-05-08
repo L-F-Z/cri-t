@@ -61,10 +61,6 @@ func (s *Server) stopContainer(ctx context.Context, ctr *oci.Container, timeout 
 		return fmt.Errorf("failed to stop container %s: %w", ctr.ID(), err)
 	}
 
-	if err := s.StorageService().StopContainer(ctx, ctr.ID()); err != nil {
-		return fmt.Errorf("failed to unmount container %s: %w", ctr.ID(), err)
-	}
-
 	if err := s.ContainerStateToDisk(ctx, ctr); err != nil {
 		log.Warnf(ctx, "Unable to write containers %s state to disk: %v", ctr.ID(), err)
 	}

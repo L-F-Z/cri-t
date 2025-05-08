@@ -74,7 +74,6 @@ type Bundle struct {
 	PrefabIndexs map[string]int    // Prefab Name -> PrefabPaths Index
 	PrefabPaths  []string
 	PrefabIDs    []string
-	RootFS       string
 	LocalDir     string
 	LocalDirCnt  int
 	BasePath     string
@@ -87,6 +86,7 @@ const LIST_NAME = "Bundles.json"
 type BundleManager struct {
 	prefabService *prefabservice.PrefabService
 	bundleDir     string
+	containerDir  string
 	bundles       map[string]map[string]BundleId
 	listPath      string
 	sync.RWMutex
@@ -100,6 +100,13 @@ func NewBundleManager(workDir string, upstream string) (bm *BundleManager, err e
 	err = os.MkdirAll(bm.bundleDir, perm)
 	if err != nil {
 		err = fmt.Errorf("unable to make dir %s [%v]", bm.bundleDir, err)
+		return
+	}
+
+	bm.containerDir = filepath.Join(workDir, "Container")
+	err = os.MkdirAll(bm.containerDir, perm)
+	if err != nil {
+		err = fmt.Errorf("unable to make dir %s [%v]", bm.containerDir, err)
 		return
 	}
 

@@ -537,17 +537,6 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	// TODO: Pass interface instead of individual field.
 	s.resourceStore.SetStageForResource(ctx, sboxName, "sandbox storage start")
 
-	mountPoint, err := s.StorageService().StartContainer(sboxID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to mount container %s in pod sandbox %s(%s): %w", containerName, sb.Name(), sboxID, err)
-	}
-	resourceCleaner.Add(ctx, "runSandbox: stopping storage container for sandbox "+sboxID, func() error {
-		if err := s.StorageService().StopContainer(ctx, sboxID); err != nil {
-			return fmt.Errorf("could not stop storage container: %s: %w", sboxID, err)
-		}
-		return nil
-	})
-
 	// Set OOM score adjust of the infra container to be very low
 	// so it doesn't get killed.
 	g.SetProcessOOMScoreAdj(PodInfraOOMAdj)
@@ -561,7 +550,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	}
 
 	saveOptions := generate.ExportOptions{}
-	g.AddAnnotation(annotations.MountPoint, mountPoint)
+	g.AddAnnotation(annotations.MountPoint, podContainer.RootFs)
 
 	if err := os.WriteFile(hostnamePath, []byte(hostname+"\n"), 0o644); err != nil {
 		return nil, err
@@ -577,7 +566,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	}
 	g.AddMount(mnt)
 	g.AddAnnotation(annotations.HostnamePath, hostnamePath)
-	g.SetRootPath(mountPoint)
+	g.SetRootPath(podContainer.RootFs)
 
 	if os.Getenv(rootlessEnvName) != "" {
 		makeOCIConfigurationRootless(g)
@@ -627,7 +616,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 			return nil, fmt.Errorf("create dropped infra %s cgroup: %w", sboxID, err)
 		}
 	}
-	container.SetMountPoint(mountPoint)
+	container.SetMountPoint(podContainer.RootFs)
 	container.SetSpec(g.Config)
 
 	if err := sb.SetInfraContainer(container); err != nil {

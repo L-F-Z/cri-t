@@ -8,26 +8,7 @@ import (
 	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
 	"github.com/L-F-Z/cri-t/internal/oci"
 	"github.com/L-F-Z/cri-t/internal/registrar"
-	"github.com/L-F-Z/cri-t/internal/storage"
 )
-
-// GetStorageContainer searches for a container with the given name or ID in the given store.
-func (c *ContainerServer) GetStorageContainer(ctx context.Context, container string) (*storage.Container, error) {
-	ociCtr, err := c.LookupContainer(ctx, container)
-	if err != nil {
-		return nil, err
-	}
-	return c.storageService.Container(ociCtr.ID())
-}
-
-// GetContainerTopLayerID gets the ID of the top layer of the given container.
-func (c *ContainerServer) GetContainerTopLayerID(ctx context.Context, containerID string) (string, error) {
-	ctr, err := c.GetStorageContainer(ctx, containerID)
-	if err != nil {
-		return "", err
-	}
-	return ctr.LayerID, nil
-}
 
 // GetContainerFromShortID gets an oci container matching the specified full or partial id.
 func (c *ContainerServer) GetContainerFromShortID(ctx context.Context, cid string) (*oci.Container, error) {

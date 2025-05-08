@@ -92,11 +92,6 @@ func (bm *BundleManager) Assemble(blueprint prefab.Blueprint, basePath string, d
 		return fmt.Errorf("error occured when downloading prefabs: [%v]", err)
 	}
 
-	bundle.RootFS, err = bm.mountOverlay(workDir, bundle.PrefabPaths)
-	if err != nil {
-		return fmt.Errorf("unable to mount overlay directory: [%v]", err)
-	}
-
 	specPath := filepath.Join(workDir, SPEC_NAME)
 	file, err := os.Create(specPath)
 	if err != nil {

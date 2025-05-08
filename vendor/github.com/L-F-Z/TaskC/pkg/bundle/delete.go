@@ -67,10 +67,6 @@ func (bm *BundleManager) deleteByNameVersion(name string, version string) (err e
 	}
 
 	workDir := filepath.Join(bm.bundleDir, string(id))
-	err = bm.umountOverlay(workDir)
-	if err != nil {
-		return fmt.Errorf("unable to umount %s (%s): [%v]", name, version, err)
-	}
 	err = os.RemoveAll(workDir)
 	if err != nil {
 		return fmt.Errorf("unable to remove dir %s: [%v]", workDir, err)

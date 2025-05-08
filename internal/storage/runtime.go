@@ -3,6 +3,9 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	json "github.com/json-iterator/go"
@@ -10,7 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/L-F-Z/TaskC/pkg/bundle"
-	"github.com/L-F-Z/TaskC/pkg/libtc"
 	"github.com/L-F-Z/cri-t/internal/log"
 )
 
@@ -40,6 +42,8 @@ var (
 	ErrContainerUnknown = errors.New("container not known")
 	// ErrLayerUnknown indicates that there was no layer with the specified name or ID.
 	ErrLayerUnknown = errors.New("layer not known")
+	// ErrRootFsUnknown indicates that the RootFs does not exist
+	ErrRootFsUnknown = errors.New("rootfs not known")
 )
 
 // CreatePodSandbox creates a pod infrastructure container, using the
@@ -128,18 +132,9 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 
 	metadata.Pod = (containerID == metadata.PodID) // Or should this be hard-coded in callers? The caller should know whether it is creating the infra container.
 	metadata.CreatedAt = time.Now().Unix()
-	mdata, err := json.Marshal(&metadata)
-	if err != nil {
-		return ContainerInfo{}, err
-	}
+	ss.SetContainerMetadata(containerID, &metadata)
 
-	// Build the container.
-	names := []string{metadata.ContainerName}
-	if metadata.Pod {
-		names = append(names, metadata.PodName)
-	}
-
-	container, err := createContainer(containerID, names, template.imageID, string(mdata), labelOptions)
+	id, rootFs, imgConfig, err := ss.bm.CreateContainerById(template.imageID)
 	if err != nil {
 		if metadata.Pod {
 			logrus.Debugf("Failed to create pod sandbox %s(%s): %v", metadata.PodName, metadata.PodID, err)
@@ -149,69 +144,64 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 		return ContainerInfo{}, err
 	}
 	if metadata.Pod {
-		logrus.Debugf("Created pod sandbox %q", container.ID)
+		logrus.Debugf("Created pod sandbox %q", id)
 	} else {
-		logrus.Debugf("Created container %q", container.ID)
+		logrus.Debugf("Created container %q", id)
 	}
 
 	// If anything fails after this point, we need to delete the incomplete
 	// container before returning.
 	defer func() {
 		if retErr != nil {
-			if err2 := libtc.Remove(container.ID, ss.root); err2 != nil {
+			if err2 := ss.bm.DeleteContainer(id); err2 != nil {
 				if metadata.Pod {
-					logrus.Debugf("%v deleting partially-created pod sandbox %q", err2, container.ID)
+					logrus.Debugf("%v deleting partially-created pod sandbox %q", err2, id)
 				} else {
-					logrus.Debugf("%v deleting partially-created container %q", err2, container.ID)
+					logrus.Debugf("%v deleting partially-created container %q", err2, id)
 				}
 				return
 			}
-			logrus.Debugf("Deleted partially-created container %q", container.ID)
+			logrus.Debugf("Deleted partially-created container %q", id)
 		}
 	}()
 
-	// Find out where the container work directories are, so that we can return them.
-	containerDir, err := ss.ContainerDirectory(container.ID)
+	containerDir := filepath.Join(ss.work, id)
+	err = os.MkdirAll(containerDir, 0o755)
 	if err != nil {
 		return ContainerInfo{}, err
 	}
 	if metadata.Pod {
-		logrus.Debugf("Pod sandbox %q has work directory %q", container.ID, containerDir)
+		logrus.Debugf("Pod sandbox %q has work directory %q", id, containerDir)
 	} else {
-		logrus.Debugf("Container %q has work directory %q", container.ID, containerDir)
+		logrus.Debugf("Container %q has work directory %q", id, containerDir)
 	}
 
-	containerRunDir, err := ss.ContainerRunDirectory(container.ID)
+	containerRunDir := filepath.Join(ss.run, id)
+	err = os.MkdirAll(containerRunDir, 0o755)
 	if err != nil {
 		return ContainerInfo{}, err
 	}
 	if metadata.Pod {
-		logrus.Debugf("Pod sandbox %q has run directory %q", container.ID, containerRunDir)
+		logrus.Debugf("Pod sandbox %q has run directory %q", id, containerRunDir)
 	} else {
-		logrus.Debugf("Container %q has run directory %q", container.ID, containerRunDir)
+		logrus.Debugf("Container %q has run directory %q", id, containerRunDir)
 	}
 
 	// TODO: generate imageConfig from template.imageID
-	imageConfig := &v1.Image{}
+	now := time.Now()
+	imageConfig := &v1.Image{
+		Created: &now,
+		Config:  imgConfig,
+	}
 	return ContainerInfo{
-		ID:           container.ID,
+		ID:           id,
 		Dir:          containerDir,
 		RunDir:       containerRunDir,
+		RootFs:       rootFs,
 		Config:       imageConfig,
-		ProcessLabel: container.ProcessLabel(),
-		MountLabel:   container.MountLabel(),
+		ProcessLabel: "",
+		MountLabel:   "",
 	}, nil
-}
-
-// CreateContainer creates a new container, optionally with the
-// specified ID (one will be assigned if none is specified), with
-// optional names, using the specified image's top layer as the basis
-// for the container's layer, and assigning the specified ID to that
-// layer (one will be created if none is specified).  A container is a
-// layer which is associated with additional bookkeeping information
-// which the library stores for the convenience of its caller.
-func createContainer(id string, names []string, bundleId bundle.BundleId, metadata string, labelOptions []string) (*Container, error) {
-	return nil, nil
 }
 
 // DeleteContainer deletes a container, unmounting it first if need be.
@@ -223,18 +213,14 @@ func (ss *StorageService) DeleteContainer(ctx context.Context, idOrName string) 
 	if idOrName == "" {
 		return ErrInvalidContainerID
 	}
-	container, err := ss.Container(idOrName)
-	// Already deleted
-	if errors.Is(err, ErrContainerUnknown) {
-		return nil
-	}
+	err := ss.bm.DeleteContainer(idOrName)
 	if err != nil {
+		log.Debugf(ctx, "Failed to delete container %q: %v", idOrName, err)
 		return err
 	}
-	// TODO: Delete Container Here
-	err = libtc.Remove(container.ID, ss.root)
+	err = ss.DeleteMetadata(idOrName)
 	if err != nil {
-		log.Debugf(ctx, "Failed to delete container %q: %v", container.ID, err)
+		log.Debugf(ctx, "Failed to delete container metadata %q: %v", idOrName, err)
 		return err
 	}
 	return nil
@@ -247,106 +233,87 @@ func (ss *StorageService) SetContainerMetadata(idOrName string, metadata *Runtim
 		logrus.Debugf("Failed to encode metadata for %q: %v", idOrName, err)
 		return err
 	}
-	return ss.SetMetadata(idOrName, string(mdata))
+
+	metadataFile := filepath.Join(ss.meta, idOrName)
+	err = os.WriteFile(metadataFile, mdata, 0o644)
+	if err != nil {
+		return fmt.Errorf("failed to write metadata file: %w", err)
+	}
+	return nil
 }
 
 // GetContainerMetadata returns the metadata we've stored for a container.
 func (ss *StorageService) GetContainerMetadata(idOrName string) (RuntimeContainerMetadata, error) {
 	metadata := RuntimeContainerMetadata{}
-	mdata, err := ss.Metadata(idOrName)
-	if err != nil {
-		return metadata, err
+	metadataFile := filepath.Join(ss.meta, idOrName)
+	_, err := os.Stat(metadataFile)
+	if os.IsNotExist(err) {
+		return metadata, ErrInvalidContainerID
+	} else if err != nil {
+		return metadata, fmt.Errorf("failed to stat metadata file: %w", err)
 	}
-	if err := json.Unmarshal([]byte(mdata), &metadata); err != nil {
+	data, err := os.ReadFile(metadataFile)
+	if err != nil {
+		return metadata, fmt.Errorf("failed to read rootFs file: %w", err)
+	}
+	if err := json.Unmarshal(data, &metadata); err != nil {
 		return metadata, err
 	}
 	return metadata, nil
 }
 
-// StartContainer makes sure a container's filesystem is mounted, and
-// returns the location of its root filesystem, which is not guaranteed
-// by lower-level drivers to never change.
-func (ss *StorageService) StartContainer(idOrName string) (string, error) {
-	container, err := ss.Container(idOrName)
-	if err != nil {
-		if errors.Is(err, ErrContainerUnknown) {
-			return "", ErrInvalidContainerID
-		}
-		return "", err
+func (ss *StorageService) DeleteMetadata(id string) error {
+	metadataFile := filepath.Join(ss.meta, id)
+	if _, err := os.Stat(metadataFile); os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to stat metadata file: %w", err)
 	}
-	metadata := RuntimeContainerMetadata{}
-	if err := json.Unmarshal([]byte(container.Metadata), &metadata); err != nil {
-		return "", err
+	if err := os.Remove(metadataFile); err != nil {
+		return fmt.Errorf("failed to delete metadata file: %w", err)
 	}
-	mountPoint, err := ss.Mount(container.ID, metadata.MountLabel)
-	if err != nil {
-		logrus.Debugf("Failed to mount container %q: %v", container.ID, err)
-		return "", err
-	}
-	logrus.Debugf("Mounted container %q at %q", container.ID, mountPoint)
-	return mountPoint, nil
-}
-
-// StopContainer attempts to unmount a container's root filesystem,
-// freeing up any kernel resources which may be limited.
-func (ss *StorageService) StopContainer(ctx context.Context, idOrName string) error {
-	ctx, span := log.StartSpan(ctx)
-	defer span.End()
-	if idOrName == "" {
-		return ErrInvalidContainerID
-	}
-	container, err := ss.Container(idOrName)
-	if err != nil {
-		if errors.Is(err, ErrContainerUnknown) {
-			log.Infof(ctx, "Container %s not known, assuming it got already removed", idOrName)
-			return nil
-		}
-
-		log.Warnf(ctx, "Failed to get container %s: %v", idOrName, err)
-		return err
-	}
-
-	if _, err := ss.Unmount(container.ID, true); err != nil {
-		if errors.Is(err, ErrLayerUnknown) {
-			log.Infof(ctx, "Layer for container %s not known", container.ID)
-			return nil
-		}
-
-		log.Warnf(ctx, "Failed to unmount container %s: %v", container.ID, err)
-		return err
-	}
-
-	log.Debugf(ctx, "Unmounted container %s", container.ID)
 	return nil
 }
 
-// GetWorkDir returns the path of a nonvolatile directory on the
-// filesystem (somewhere under the Store's Root directory) which can be
-// used to store arbitrary data that is specific to the container.  It
-// will be removed automatically when the container is deleted.
-func (ss *StorageService) GetWorkDir(id string) (string, error) {
-	container, err := ss.Container(id)
-	if err != nil {
-		if errors.Is(err, ErrContainerUnknown) {
-			return "", ErrInvalidContainerID
-		}
-		return "", err
-	}
-	return ss.ContainerDirectory(container.ID)
+// Containers returns a list of the currently known containers.
+func (ss *StorageService) Containers() ([]Container, error) {
+	return []Container{}, nil
 }
 
-// GetRunDir returns the path of a volatile directory (does not survive
-// the host rebooting, somewhere under the Store's RunRoot directory)
-// on the filesystem which can be used to store arbitrary data that is
-// specific to the container.  It will be removed automatically when
-// the container is deleted.
-func (ss *StorageService) GetRunDir(id string) (string, error) {
-	container, err := ss.Container(id)
-	if err != nil {
-		if errors.Is(err, ErrContainerUnknown) {
-			return "", ErrInvalidContainerID
-		}
-		return "", err
-	}
-	return ss.ContainerRunDirectory(container.ID)
+// ContainerDirectory returns a path of a directory which the caller
+// can use to store data, specific to the container, which the library
+// does not directly manage.  The directory will be deleted when the
+// container is deleted.
+func (ss *StorageService) ContainerDirectory(id string) (string, error) {
+	path := filepath.Join(ss.work, id)
+	_, err := os.Stat(path)
+	return path, err
+}
+
+// ContainerRunDirectory returns a path of a directory which the
+// caller can use to store data, specific to the container, which the
+// library does not directly manage.  The directory will be deleted
+// when the host system is restarted.
+func (ss *StorageService) ContainerRunDirectory(id string) (string, error) {
+	path := filepath.Join(ss.run, id)
+	_, err := os.Stat(path)
+	return path, err
+}
+
+func (ss *StorageService) GetUsage(id string) (bytesUsed uint64, inodeUsed uint64) {
+	return 0, 0
+}
+
+// FromContainerDirectory is a convenience function which reads
+// the contents of the specified file relative to the container's
+// directory.
+func (ss *StorageService) FromContainerDirectory(id, file string) ([]byte, error) {
+	return []byte{}, nil
+}
+
+// Tries to clean up remainders of previous containers or layers that are not
+// references in the json files. These can happen in the case of unclean
+// shutdowns or regular restarts in transient store mode.
+func (ss *StorageService) GarbageCollect() error {
+	return nil
 }

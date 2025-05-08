@@ -41,7 +41,7 @@ func (bm *BundleManager) assembleLocal(bundle *Bundle, blueprint *prefab.Bluepri
 				return fmt.Errorf("[%s] %s [%s] must not have alternatives", cand.SpecType, cand.Name, cand.Specifier)
 			}
 
-			dstDir := filepath.Join(bundle.LocalDir, intToShortName(bundle.LocalDirCnt))
+			dstDir := filepath.Join(bundle.LocalDir, utils.IntToShortName(bundle.LocalDirCnt))
 			bundle.LocalDirCnt++
 			bundle.PrefabPaths = append(bundle.PrefabPaths, dstDir)
 
