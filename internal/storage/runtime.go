@@ -131,8 +131,8 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 	}
 
 	metadata.Pod = (containerID == metadata.PodID) // Or should this be hard-coded in callers? The caller should know whether it is creating the infra container.
-	metadata.CreatedAt = time.Now().Unix()
-	ss.SetContainerMetadata(containerID, &metadata)
+	now := time.Now()
+	metadata.CreatedAt = now.Unix()
 
 	id, rootFs, imgConfig, err := ss.bm.CreateContainerById(template.imageID)
 	if err != nil {
@@ -187,18 +187,21 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 		logrus.Debugf("Container %q has run directory %q", id, containerRunDir)
 	}
 
-	// TODO: generate imageConfig from template.imageID
-	now := time.Now()
-	imageConfig := &v1.Image{
-		Created: &now,
-		Config:  imgConfig,
+	mdata, err := json.Marshal(&metadata)
+	if err != nil {
+		err = fmt.Errorf("failed to encode metadata: %v", err)
+		return ContainerInfo{}, err
 	}
+
 	return ContainerInfo{
 		ID:           id,
+		Names:        []string{},
+		ImageID:      template.imageID.String(),
 		Dir:          containerDir,
 		RunDir:       containerRunDir,
 		RootFs:       rootFs,
-		Config:       imageConfig,
+		Config:       &v1.Image{Created: &now, Config: imgConfig},
+		Metadata:     string(mdata),
 		ProcessLabel: "",
 		MountLabel:   "",
 	}, nil
@@ -218,10 +221,10 @@ func (ss *StorageService) DeleteContainer(ctx context.Context, idOrName string) 
 		log.Debugf(ctx, "Failed to delete container %q: %v", idOrName, err)
 		return err
 	}
-	err = ss.DeleteMetadata(idOrName)
-	if err != nil {
-		log.Debugf(ctx, "Failed to delete container metadata %q: %v", idOrName, err)
-		return err
+	infoFile := filepath.Join(ss.info, idOrName)
+	err = os.Remove(infoFile)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to delete metadata file: %w", err)
 	}
 	return nil
 }
@@ -230,54 +233,83 @@ func (ss *StorageService) DeleteContainer(ctx context.Context, idOrName string) 
 func (ss *StorageService) SetContainerMetadata(idOrName string, metadata *RuntimeContainerMetadata) error {
 	mdata, err := json.Marshal(&metadata)
 	if err != nil {
-		logrus.Debugf("Failed to encode metadata for %q: %v", idOrName, err)
-		return err
+		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	metadataFile := filepath.Join(ss.meta, idOrName)
-	err = os.WriteFile(metadataFile, mdata, 0o644)
+	info, err := ss.loadInfo(idOrName)
 	if err != nil {
-		return fmt.Errorf("failed to write metadata file: %w", err)
+		return err
 	}
-	return nil
+	info.Metadata = string(mdata)
+	return ss.saveInfo(idOrName, info)
 }
 
 // GetContainerMetadata returns the metadata we've stored for a container.
 func (ss *StorageService) GetContainerMetadata(idOrName string) (RuntimeContainerMetadata, error) {
 	metadata := RuntimeContainerMetadata{}
-	metadataFile := filepath.Join(ss.meta, idOrName)
-	_, err := os.Stat(metadataFile)
-	if os.IsNotExist(err) {
-		return metadata, ErrInvalidContainerID
-	} else if err != nil {
-		return metadata, fmt.Errorf("failed to stat metadata file: %w", err)
-	}
-	data, err := os.ReadFile(metadataFile)
+	info, err := ss.loadInfo(idOrName)
 	if err != nil {
-		return metadata, fmt.Errorf("failed to read rootFs file: %w", err)
-	}
-	if err := json.Unmarshal(data, &metadata); err != nil {
 		return metadata, err
+	}
+	err = json.Unmarshal([]byte(info.Metadata), &metadata)
+	if err != nil {
+		return metadata, fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 	return metadata, nil
 }
 
-func (ss *StorageService) DeleteMetadata(id string) error {
-	metadataFile := filepath.Join(ss.meta, id)
-	if _, err := os.Stat(metadataFile); os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("failed to stat metadata file: %w", err)
+func (ss *StorageService) saveInfo(idOrName string, info ContainerInfo) error {
+	path := filepath.Join(ss.info, idOrName)
+	data, err := json.Marshal(info)
+	if err != nil {
+		return fmt.Errorf("failed to marshal container info: %w", err)
 	}
-	if err := os.Remove(metadataFile); err != nil {
-		return fmt.Errorf("failed to delete metadata file: %w", err)
+	err = os.WriteFile(path, data, 0o644)
+	if err != nil {
+		return fmt.Errorf("failed to save container info: %w", err)
 	}
 	return nil
 }
 
+func (ss *StorageService) loadInfo(idOrName string) (ContainerInfo, error) {
+	info := ContainerInfo{}
+	path := filepath.Join(ss.info, idOrName)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return info, fmt.Errorf("failed to load container info: %w", err)
+	}
+	err = json.Unmarshal(data, &info)
+	if err != nil {
+		return info, fmt.Errorf("failed to unmarshal container info: %w", err)
+	}
+	return info, nil
+}
+
 // Containers returns a list of the currently known containers.
-func (ss *StorageService) Containers() ([]Container, error) {
-	return []Container{}, nil
+func (ss *StorageService) Containers() ([]ContainerInfo, error) {
+	entries, err := os.ReadDir(ss.info)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read info directory: %w", err)
+	}
+
+	var containers []ContainerInfo
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		path := filepath.Join(ss.info, entry.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file %s: %w", path, err)
+		}
+		var info ContainerInfo
+		err = json.Unmarshal(data, &info)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal file %s: %w", path, err)
+		}
+		containers = append(containers, info)
+	}
+	return containers, nil
 }
 
 // ContainerDirectory returns a path of a directory which the caller
@@ -301,6 +333,7 @@ func (ss *StorageService) ContainerRunDirectory(id string) (string, error) {
 }
 
 func (ss *StorageService) GetUsage(id string) (bytesUsed uint64, inodeUsed uint64) {
+	// TODO: calculate real usage data
 	return 0, 0
 }
 
@@ -308,7 +341,8 @@ func (ss *StorageService) GetUsage(id string) (bytesUsed uint64, inodeUsed uint6
 // the contents of the specified file relative to the container's
 // directory.
 func (ss *StorageService) FromContainerDirectory(id, file string) ([]byte, error) {
-	return []byte{}, nil
+	path := filepath.Join(ss.work, id, file)
+	return os.ReadFile(path)
 }
 
 // Tries to clean up remainders of previous containers or layers that are not

@@ -160,10 +160,6 @@ func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 			log.Warnf(ctx, "Error parsing metadata for %s: %v, ignoring", containers[i].ID, err2)
 			continue
 		}
-		if !storage.IsCrioContainer(&metadata) {
-			log.Debugf(ctx, "Container %s determined to not be a CRI-O container or sandbox", containers[i].ID)
-			continue
-		}
 		names[containers[i].ID] = containers[i].Names
 		if metadata.Pod {
 			pods[containers[i].ID] = &metadata

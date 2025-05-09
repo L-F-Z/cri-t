@@ -16,20 +16,20 @@ import (
 type StorageService struct {
 	work                 string
 	run                  string
-	meta                 string
+	info                 string
 	bm                   *bundle.BundleManager
 	regexForPinnedImages []*regexp.Regexp
 }
 
 func NewStorageService(ctx context.Context, root string, runRoot string) (*StorageService, error) {
-	bm, err := bundle.NewBundleManager(root, "")
+	bm, err := bundle.NewBundleManager(root, "https://prefab.cs.ac.cn:10062/")
 	if err != nil {
 		return &StorageService{}, err
 	}
 	workDir := filepath.Join(root, "containerWork")
-	metaDir := filepath.Join(root, "containerMeta")
+	infoDir := filepath.Join(root, "containerInfo")
 	runDir := filepath.Join(runRoot, "containerRun")
-	for _, path := range []string{workDir, metaDir, runDir} {
+	for _, path := range []string{workDir, infoDir, runDir} {
 		err := os.MkdirAll(path, 0o755)
 		if err != nil {
 			return &StorageService{}, err
@@ -38,7 +38,7 @@ func NewStorageService(ctx context.Context, root string, runRoot string) (*Stora
 	return &StorageService{
 		work:                 workDir,
 		run:                  runDir,
-		meta:                 metaDir,
+		info:                 infoDir,
 		bm:                   bm,
 		regexForPinnedImages: []*regexp.Regexp{},
 	}, nil
