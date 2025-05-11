@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/L-F-Z/TaskC/pkg/bundle"
+	"golang.org/x/sync/singleflight"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
@@ -19,6 +20,7 @@ type StorageService struct {
 	info                 string
 	bm                   *bundle.BundleManager
 	regexForPinnedImages []*regexp.Regexp
+	pullGroup            singleflight.Group
 }
 
 func NewStorageService(ctx context.Context, root string, runRoot string) (*StorageService, error) {
@@ -129,162 +131,27 @@ func (ss *StorageService) ImageStatusByName(name bundle.BundleName) (img *types.
 
 // PullImage imports an image from the specified location.
 func (ss *StorageService) PullImage(ctx context.Context, imageName bundle.BundleName) (id bundle.BundleId, err error) {
-	err = ss.bm.AssembleHandler(bundle.AssembleConfig{
-		ClosureName:    imageName.Name,
-		ClosureVersion: imageName.Version,
-		Overwrite:      true,
-		IgnoreGPU:      false,
+	key := imageName.String()
+	res, err, _ := ss.pullGroup.Do(key, func() (interface{}, error) {
+		if err := ss.bm.AssembleHandler(bundle.AssembleConfig{
+			ClosureName:    imageName.Name,
+			ClosureVersion: imageName.Version,
+			Overwrite:      true,
+			IgnoreGPU:      false,
+		}); err != nil {
+			return nil, err
+		}
+		b, err := ss.bm.Get(imageName.Name, imageName.Version)
+		if err != nil {
+			return nil, err
+		}
+		return b.Id, nil
 	})
 	if err != nil {
-		return
+		return "", err
 	}
-	bundle, err := ss.bm.Get(imageName.Name, imageName.Version)
-	if err != nil {
-		return
-	}
-	id = bundle.Id
-	return
+	return res.(bundle.BundleId), nil
 }
-
-// type imageCache map[bundle.BundleId]*types.Image
-
-// func (svc *imageService) buildImageCacheItem(ref types.ImageReference) (imageCacheItem, error) {
-// 	imageFull, err := ref.NewImage(svc.ctx, nil)
-// 	if err != nil {
-// 		return imageCacheItem{}, err
-// 	}
-// 	defer imageFull.Close()
-// 	imageConfig, err := imageFull.OCIConfig(svc.ctx)
-// 	if err != nil {
-// 		return imageCacheItem{}, err
-// 	}
-// 	size := imageSize(imageFull)
-
-// 	info, err := imageFull.Inspect(svc.ctx)
-// 	if err != nil {
-// 		return imageCacheItem{}, fmt.Errorf("inspecting image: %w", err)
-// 	}
-
-// 	rawSource, err := ref.NewImageSource(svc.ctx, nil)
-// 	if err != nil {
-// 		return imageCacheItem{}, err
-// 	}
-// 	defer rawSource.Close()
-
-// 	topManifestBlob, manifestType, err := rawSource.GetManifest(svc.ctx, nil)
-// 	if err != nil {
-// 		return imageCacheItem{}, err
-// 	}
-// 	var ociManifest specs.Manifest
-// 	if manifestType == specs.MediaTypeImageManifest {
-// 		if err := json.Unmarshal(topManifestBlob, &ociManifest); err != nil {
-// 			return imageCacheItem{}, err
-// 		}
-// 	}
-
-// 	return imageCacheItem{
-// 		config:      imageConfig,
-// 		size:        size,
-// 		info:        info,
-// 		annotations: ociManifest.Annotations,
-// 	}, nil
-// }
-
-// func (svc *imageService) ListImages() ([]ImageResult, error) {
-// 	images, err := svc.store.Images()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	results := make([]ImageResult, 0, len(images))
-// 	newImageCache := make(imageCache, len(images))
-// 	for i := range images {
-// 		image := &images[i]
-// 		ref, err := istorage.Transport.NewStoreReference(svc.store, nil, image.ID)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		svc.imageCacheLock.Lock()
-// 		cacheItem, ok := svc.imageCache[image.ID]
-// 		svc.imageCacheLock.Unlock()
-// 		if !ok {
-// 			cacheItem, err = svc.buildImageCacheItem(ref)
-// 			if err != nil {
-// 				if os.IsNotExist(err) && imageIsBeingPulled(image) { // skip reporting errors if the images haven't finished pulling
-// 					continue
-// 				}
-// 				return nil, err
-// 			}
-// 		}
-
-// 		newImageCache[image.ID] = cacheItem
-// 		res, err := svc.buildImageResult(image, cacheItem)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		results = append(results, res)
-// 	}
-// 	// replace image cache with cache we just built
-// 	// this invalidates all stale entries in cache
-// 	svc.imageCacheLock.Lock()
-// 	svc.imageCache = newImageCache
-// 	svc.imageCacheLock.Unlock()
-// 	return results, nil
-// }
-
-// func imageIsBeingPulled(image *storage.Image) bool {
-// 	for _, name := range image.Names {
-// 		if _, ok := ImageBeingPulled.Load(name); ok {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
-
-// // pullImageImplementation is called in PullImage, both directly and inside pullImageChild.
-// // NOTE: That means this code can run in a separate process, and it should not access any CRI-O global state.
-// //
-// // It returns a name@digest value referring to exactly the pulled image.
-// func pullImageImplementation(ctx context.Context, lookup *imageLookupService, store storage.Store, imageName RegistryImageReference, options *ImageCopyOptions) (RegistryImageReference, error) {
-// 	srcRef, err := lookup.remoteImageReference(imageName)
-// 	if err != nil {
-// 		return RegistryImageReference{}, err
-// 	}
-
-// 	destRef, err := istorage.Transport.NewStoreReference(store, imageName.Raw(), "")
-// 	if err != nil {
-// 		return RegistryImageReference{}, err
-// 	}
-
-// 	manifestBytes, err := copy.Image(ctx, nil, destRef, srcRef, &copy.Options{
-// 		ProgressInterval: options.ProgressInterval,
-// 		Progress:         options.Progress,
-// 	})
-// 	if err != nil {
-// 		return RegistryImageReference{}, err
-// 	}
-
-// 	canonicalRef, err := reference.WithDigest(reference.TrimNamed(imageName.Raw()), digest.FromBytes(manifestBytes))
-// 	if err != nil {
-// 		return RegistryImageReference{}, fmt.Errorf("create canonical reference: %w", err)
-// 	}
-
-// 	return references.RegistryImageReferenceFromRaw(canonicalRef), nil
-// }
-
-// // FilterPinnedImage checks if the given image needs to be pinned
-// // and excluded from kubelet's image GC.
-// func FilterPinnedImage(image string, pinnedImages []*regexp.Regexp) bool {
-// 	if len(pinnedImages) == 0 {
-// 		return false
-// 	}
-
-// 	for _, pinnedImage := range pinnedImages {
-// 		if pinnedImage.MatchString(image) {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
 
 // DeleteImage deletes a storage image (impacting all its tags)
 func (ss *StorageService) DeleteImage(id bundle.BundleId) error {
