@@ -117,6 +117,17 @@ func (ps *PrefabService) WaitDownload(ids []string) error {
 	return ps.fileStore.WaitDownload(ids)
 }
 
+func (ps *PrefabService) SizeSum(ids []string) (size uint64, err error) {
+	for _, id := range ids {
+		info, exist := ps.fileStore.files[id]
+		if !exist {
+			err = fmt.Errorf("prefab %s unfound", id)
+		}
+		size += info.FileSize
+	}
+	return
+}
+
 func (ps *PrefabService) RequestClosure(name string, version string, dstDir string) (closureName string, err error) {
 	ver, err := ParseAnyVersion(repointerface.REPO_CLOSURE, version)
 	if err != nil {

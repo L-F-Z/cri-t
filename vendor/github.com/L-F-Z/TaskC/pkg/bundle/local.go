@@ -31,14 +31,14 @@ const LOCAL_PYTHON_TAG = "PYTHON"
 
 var localTypes = []string{LOCAL_CONTENT_TAG, LOCAL_PYTHON_TAG}
 
-func (bm *BundleManager) assembleLocal(bundle *Bundle, blueprint *prefab.Blueprint, ctx *dcontext.DeployContext) (err error) {
+func (bm *BundleManager) assembleLocal(bundle *Bundle, blueprint *prefab.Blueprint, ctx *dcontext.DeployContext) (size uint64, err error) {
 	for _, alternative := range blueprint.Depend {
 		for _, cand := range alternative {
 			if !slices.Contains(localTypes, cand.SpecType) {
 				continue
 			}
 			if len(alternative) != 1 {
-				return fmt.Errorf("[%s] %s [%s] must not have alternatives", cand.SpecType, cand.Name, cand.Specifier)
+				return 0, fmt.Errorf("[%s] %s [%s] must not have alternatives", cand.SpecType, cand.Name, cand.Specifier)
 			}
 
 			dstDir := filepath.Join(bundle.LocalDir, utils.IntToShortName(bundle.LocalDirCnt))
@@ -52,11 +52,30 @@ func (bm *BundleManager) assembleLocal(bundle *Bundle, blueprint *prefab.Bluepri
 				err = asmPython(cand, bundle.BasePath, dstDir, ctx)
 			}
 			if err != nil {
-				return err
+				return 0, err
 			}
+
+			dirSize, err := getDirSize(dstDir)
+			if err != nil {
+				return 0, err
+			}
+			size += dirSize
 		}
 	}
 	return
+}
+
+func getDirSize(path string) (dirSize uint64, err error) {
+	if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		dirSize += uint64(info.Size())
+		return nil
+	}); err != nil {
+		return 0, err
+	}
+	return dirSize, nil
 }
 
 func asmLocal(p *prefab.Prefab, basePath string, dstDir string) (err error) {

@@ -78,6 +78,7 @@ type Bundle struct {
 	LocalDirCnt  int
 	BasePath     string
 	Blueprint    *prefab.Blueprint
+	Size         uint64
 }
 
 const SPEC_NAME = "bundle.json"

@@ -82,7 +82,7 @@ func (bm *BundleManager) Assemble(blueprint prefab.Blueprint, basePath string, d
 		}
 	}
 
-	err = bm.assembleLocal(bundle, &blueprint, dctx)
+	localSize, err := bm.assembleLocal(bundle, &blueprint, dctx)
 	if err != nil {
 		return fmt.Errorf("failed to assemble blueprint %s: [%v]", blueprint.Name, err)
 	}
@@ -91,6 +91,12 @@ func (bm *BundleManager) Assemble(blueprint prefab.Blueprint, basePath string, d
 	if err != nil {
 		return fmt.Errorf("error occured when downloading prefabs: [%v]", err)
 	}
+
+	prefabSize, err := bm.prefabService.SizeSum(bundle.PrefabIDs)
+	if err != nil {
+		return fmt.Errorf("failed to calculate bundle size: [%v]", err)
+	}
+	bundle.Size = localSize + prefabSize
 
 	specPath := filepath.Join(workDir, SPEC_NAME)
 	file, err := os.Create(specPath)

@@ -62,7 +62,7 @@ func (ss *StorageService) ListImages() (result []*types.Image, err error) {
 			Id:          fmt.Sprintf("sha256:%s", bundle.Id),
 			RepoTags:    []string{},
 			RepoDigests: []string{fmt.Sprintf("%s@sha256:%s", bundle.Blueprint.Name, bundle.Id)},
-			Size_:       0,
+			Size_:       bundle.Size,
 			Uid:         &types.Int64Value{Value: *uid},
 			Username:    username,
 			Pinned:      false,

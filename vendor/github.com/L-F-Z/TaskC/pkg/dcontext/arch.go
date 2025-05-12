@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 const ARCH_KEY = "hardware.architecture"
@@ -42,6 +43,9 @@ func (d *DeployContext) SetArch(root string) (err error) {
 // Get system architure by reading "/var/lib/dpkg/status" and get package info of libc6
 // All possible archs includes: amd64, arm64, armel, armhf, i386, mips64el, mipsel, ppc64el, riscv64, s390x
 func Arch(root string) (arch string, err error) {
+	if root == "/" || root == "" {
+		return runtime.GOARCH, nil
+	}
 	pkgTarget := "libc6"
 	path := filepath.Join(root, "/var/lib/dpkg/status")
 	file, err := os.Open(path)

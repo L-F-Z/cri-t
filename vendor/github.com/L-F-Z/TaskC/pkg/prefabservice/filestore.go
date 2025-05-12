@@ -33,6 +33,7 @@ import (
 type FileInfo struct {
 	FileName string `json:"filename"`
 	FileType string `json:"filetype"`
+	FileSize uint64 `json:"filesize"`
 }
 
 type FileStore struct {
@@ -138,6 +139,7 @@ func (f *FileStore) AddFile(file io.ReadCloser, targetPath string, id string, fi
 		return fmt.Errorf("failed to create temp download directory")
 	}
 	tempPath := filepath.Join(tempDir, id)
+	var size uint64
 
 	f.Lock()
 	f.downloadStatus[id] = DOWNLOADING
@@ -152,6 +154,7 @@ func (f *FileStore) AddFile(file io.ReadCloser, targetPath string, id string, fi
 				f.downloadStatus[id] = err.Error()
 			} else {
 				delete(f.downloadStatus, id)
+				fileInfo.FileSize = size
 				f.files[id] = fileInfo
 				f.saveData()
 			}
@@ -163,7 +166,7 @@ func (f *FileStore) AddFile(file io.ReadCloser, targetPath string, id string, fi
 			if err != nil {
 				return
 			}
-			err = packing.UnTarGz(file, tempPath)
+			size, err = packing.UnTarGz(file, tempPath)
 			if err != nil {
 				return
 			}

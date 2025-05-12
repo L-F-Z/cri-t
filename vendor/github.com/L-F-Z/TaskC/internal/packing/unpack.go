@@ -128,7 +128,8 @@ func Unpack(filePath string, dstDir string, fileType string, unpackedName string
 
 	switch archive {
 	case "tar":
-		return UnTar(decompressed, dstDir)
+		_, err = UnTar(decompressed, dstDir)
+		return
 	case "ar":
 		return UnAr(decompressed, dstDir)
 	default:
@@ -151,16 +152,16 @@ func Unpack(filePath string, dstDir string, fileType string, unpackedName string
 	return
 }
 
-func UnTarGz(reader io.Reader, dstDir string) error {
+func UnTarGz(reader io.Reader, dstDir string) (dirSize uint64, err error) {
 	gzipReader, err := gzip.NewReader(reader)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer gzipReader.Close()
 	return UnTar(gzipReader, dstDir)
 }
 
-func UnTar(reader io.Reader, dstDir string) (err error) {
+func UnTar(reader io.Reader, dstDir string) (dirSize uint64, err error) {
 	tarReader := tar.NewReader(reader)
 	var hardLinks []struct {
 		header *tar.Header
@@ -173,7 +174,7 @@ func UnTar(reader io.Reader, dstDir string) (err error) {
 			break
 		}
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		target := filepath.Join(dstDir, header.Name)
@@ -181,7 +182,7 @@ func UnTar(reader io.Reader, dstDir string) (err error) {
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if err := os.MkdirAll(target, _PERM); err != nil {
-				return err
+				return 0, err
 			}
 			os.Chmod(target, os.FileMode(header.Mode))
 			os.Chown(target, header.Uid, header.Gid)
@@ -189,19 +190,20 @@ func UnTar(reader io.Reader, dstDir string) (err error) {
 		case tar.TypeReg:
 			outFile, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(_PERM))
 			if err != nil {
-				return err
+				return 0, err
 			}
-			_, err = io.Copy(outFile, tarReader)
+			n, err := io.Copy(outFile, tarReader)
 			outFile.Close()
 			if err != nil {
-				return err
+				return 0, err
 			}
+			dirSize += uint64(n)
 			os.Chmod(target, os.FileMode(header.Mode))
 			os.Chown(target, header.Uid, header.Gid)
 			os.Chtimes(target, header.AccessTime, header.ModTime)
 		case tar.TypeSymlink:
 			if err := os.Symlink(header.Linkname, target); err != nil {
-				return err
+				return 0, err
 			}
 			os.Lchown(target, header.Uid, header.Gid)
 		case tar.TypeLink:
@@ -229,19 +231,19 @@ func UnTar(reader io.Reader, dstDir string) (err error) {
 	for _, hl := range hardLinks {
 		linkTarget := filepath.Join(dstDir, hl.header.Linkname)
 		if _, err := os.Stat(linkTarget); os.IsNotExist(err) {
-			return fmt.Errorf("hard link target does not exist: %s", linkTarget)
+			return 0, fmt.Errorf("hard link target does not exist: %s", linkTarget)
 		} else if err != nil {
-			return err
+			return 0, err
 		}
 		if err := os.Link(linkTarget, hl.target); err != nil {
-			return err
+			return 0, err
 		}
 		os.Chmod(hl.target, os.FileMode(hl.header.Mode))
 		os.Chown(hl.target, hl.header.Uid, hl.header.Gid)
 		os.Chtimes(hl.target, hl.header.AccessTime, hl.header.ModTime)
 	}
 
-	return nil
+	return dirSize, nil
 }
 
 func UnAr(reader io.Reader, dstDir string) (err error) {
