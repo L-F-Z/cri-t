@@ -410,9 +410,9 @@ func (c *ContainerServer) LoadContainer(ctx context.Context, id string) (retErr 
 		userRequestedImage = ""
 	}
 
-	var someNameOfTheImage *bundle.BundleName
+	var someNameOfTheImage *storage.NameTag
 	if s, ok := m.Annotations[annotations.SomeNameOfTheImage]; ok && s != "" {
-		name := storage.PaserDockerName(s)
+		name := storage.PaserNameTag(s)
 		someNameOfTheImage = &name
 	}
 

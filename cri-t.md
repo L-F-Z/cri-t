@@ -73,7 +73,8 @@ https://github.com/cri-o/cri-o/blob/main/tutorials/crictl.md
 
 ## Reset a cluster
 ```bash
-kubeadm reset
+kubeadm reset --force
 sudo systemctl stop kubelet
+sudo systemctl disable kubelet
 taskc d -A
 ```

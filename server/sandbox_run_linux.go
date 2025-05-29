@@ -165,12 +165,6 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		return nil
 	})
 
-	var labelOptions []string
-	selinuxConfig := securityContext.SelinuxOptions
-	if selinuxConfig != nil {
-		labelOptions = utils.GetLabelOptions(selinuxConfig)
-	}
-
 	privileged := s.privilegedSandbox(req)
 	sbox.SetPrivileged(privileged)
 
@@ -185,7 +179,6 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		sbox.Config().Metadata.Uid,
 		namespace,
 		attempt,
-		labelOptions,
 		privileged,
 	)
 	if errors.Is(err, storage.ErrDuplicateName) {
@@ -316,7 +309,6 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	}
 	// bind mount the pod shm
 	g.AddMount(mnt)
-
 
 	if err := s.CtrIDIndex().Add(sboxID); err != nil {
 		return nil, err

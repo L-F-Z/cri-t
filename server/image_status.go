@@ -59,9 +59,10 @@ func (s *Server) ImageStatus(ctx context.Context, req *types.ImageStatusRequest)
 // storageImageStatus calls ImageStatus for a k8s ImageSpec.
 // Returns (nil, nil) if image was not found.
 func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (*types.Image, error) {
-	bundleName := storage.PaserDockerName(spec.Image)
+	log.Infof(ctx, "Getting Image %s status", spec.Image)
+	bundleName := storage.PaserNameTag(spec.Image)
 	return s.StorageService().ImageStatusByName(bundleName)
-	// bundleName, err = storage.PaserDockerName(spec.UserSpecifiedImage)
+	// bundleName, err = storage.PaserNameTag(spec.UserSpecifiedImage)
 	// if err == nil {
 	// 	return s.StorageService().ImageStatusByName(bundleName)
 	// }

@@ -86,7 +86,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		return nil, err
 	}
 
-	var bundleName bundle.BundleName
+	var bundleName storage.NameTag
 	var imgResult *types.Image
 
 	if strings.HasPrefix(userRequestedImage, "sha256:") {
@@ -102,13 +102,13 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 			return nil, err
 		}
 
-		bundleName = bundle.BundleName{
-			Name:    b.Blueprint.Name,
-			Version: b.Blueprint.Version,
+		bundleName = storage.NameTag{
+			Name: b.Blueprint.Name,
+			Tag:  b.Blueprint.Version,
 		}
 
 	} else {
-		bundleName := storage.PaserDockerName(userRequestedImage)
+		bundleName := storage.PaserNameTag(userRequestedImage)
 		imgResult, err = s.StorageService().ImageStatusByName(bundleName)
 		if err != nil {
 			return nil, err
@@ -124,11 +124,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	// == NEVER USE userRequestedImage (or even someNameOfTheImage) for anything but diagnostic logging past this point; it might
 	// resolve to a different image.
 
-	labelOptions, err := ctr.SelinuxLabel(sb.ProcessLabel())
-	if err != nil {
-		return nil, err
-	}
-
 	metadata := containerConfig.Metadata
 
 	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container storage creation")
@@ -138,7 +133,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		containerName, containerID,
 		metadata.Name,
 		metadata.Attempt,
-		labelOptions,
 		ctr.Privileged(),
 	)
 	if err != nil {

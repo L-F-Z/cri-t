@@ -94,7 +94,7 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (bundle
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 
-	name := storage.PaserDockerName(pullArgs.image)
+	name := storage.PaserNameTag(pullArgs.image)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		log.Debugf(ctx, "Pull timeout is: %s", time.Until(deadline))

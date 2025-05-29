@@ -26,7 +26,6 @@ import (
 	"k8s.io/utils/cpuset"
 	"tags.cncf.io/container-device-interface/pkg/cdi"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/config/apparmor"
 	"github.com/L-F-Z/cri-t/internal/config/blockio"
 	"github.com/L-F-Z/cri-t/internal/config/capabilities"
@@ -1376,8 +1375,8 @@ func validateExecutablePath(executable, currentPath string) (string, error) {
 }
 
 // ParsePauseImage parses the .PauseImage value as into a validated, well-typed value.
-func (c *ImageConfig) ParsePauseImage() bundle.BundleName {
-	return storage.PaserDockerName(c.PauseImage)
+func (c *ImageConfig) ParsePauseImage() storage.NameTag {
+	return storage.PaserNameTag(c.PauseImage)
 }
 
 // Validate is the main entry point for network configuration validation.

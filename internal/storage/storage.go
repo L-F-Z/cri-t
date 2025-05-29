@@ -22,6 +22,28 @@ type StorageService struct {
 	pullGroup            singleflight.Group
 }
 
+type NameTag struct {
+	Name string
+	Tag  string
+}
+
+func PaserNameTag(uri string) NameTag {
+	var name, tag string
+	idx := strings.LastIndex(uri, ":")
+	if idx == -1 {
+		name = uri
+		tag = "latest"
+	} else {
+		name = uri[:idx]
+		tag = uri[idx+1:]
+	}
+	return NameTag{Name: name, Tag: tag}
+}
+
+func (n NameTag) String() string {
+	return n.Name + ":" + n.Tag
+}
+
 func NewStorageService(ctx context.Context, root string, runRoot string) (*StorageService, error) {
 	bm, err := bundle.NewBundleManager(root, "https://prefab.cs.ac.cn:10062/")
 	if err != nil {
@@ -56,41 +78,19 @@ func (ss *StorageService) ListImages() (result []*types.Image, err error) {
 		return
 	}
 	for _, bundle := range bundles {
-		uid, username := getUser(bundle.Blueprint.User)
+		// ignore bundle.Blueprint.User
 		img := &types.Image{
 			Id:          fmt.Sprintf("sha256:%s", bundle.Id),
 			RepoTags:    []string{fmt.Sprintf("%s:%s", bundle.Blueprint.Name, bundle.Blueprint.Version)},
 			RepoDigests: []string{fmt.Sprintf("%s@sha256:%s", bundle.Blueprint.Name, bundle.Id)},
 			Size_:       bundle.Size,
-			Uid:         &types.Int64Value{Value: *uid},
-			Username:    username,
+			Uid:         &types.Int64Value{Value: 0},
+			Username:    "root",
 			Pinned:      false,
 		}
 		result = append(result, img)
 	}
 	return
-}
-
-// getUserFromImage gets uid or user name of the image user.
-// If user is numeric, it will be treated as uid; or else, it is treated as user name.
-func getUser(user string) (id *int64, username string) {
-	// // return both empty if user is not specified in the image.
-	// if user == "" {
-	// 	user = "0:0"
-	// }
-	// // split instances where the id may contain user:group
-	// user = strings.Split(user, ":")[0]
-	// // user could be either uid or user name. Try to interpret as numeric uid.
-	// uid, err := strconv.ParseInt(user, 10, 64)
-	// if err != nil {
-	// 	// If user is non numeric, assume it's user name.
-	// 	uid = 0
-	// 	return &uid, user
-	// }
-	// // If user is a numeric uid.
-	// return &uid, ""
-	var uid int64 = 0
-	return &uid, "root"
 }
 
 // ImageStatusByID returns status of a single image
@@ -99,14 +99,14 @@ func (ss *StorageService) ImageStatusByID(id bundle.BundleId) (img *types.Image,
 	if err != nil {
 		return
 	}
-	uid, username := getUser(bundle.Blueprint.User)
+	// ignore bundle.Blueprint.User
 	img = &types.Image{
 		Id:          fmt.Sprintf("sha256:%s", bundle.Id),
 		RepoTags:    []string{fmt.Sprintf("%s:%s", bundle.Blueprint.Name, bundle.Blueprint.Version)},
 		RepoDigests: []string{fmt.Sprintf("%s@sha256:%s", bundle.Blueprint.Name, bundle.Id)},
 		Size_:       bundle.Size,
-		Uid:         &types.Int64Value{Value: *uid},
-		Username:    username,
+		Uid:         &types.Int64Value{Value: 0},
+		Username:    "root",
 		Pinned:      false,
 	}
 	return
@@ -116,42 +116,38 @@ func (ss *StorageService) GetBundleByID(id bundle.BundleId) (bundle *bundle.Bund
 	return ss.bm.GetById(id)
 }
 
-func (ss *StorageService) GetBundleByName(name bundle.BundleName) (bundle *bundle.Bundle, err error) {
-	return ss.bm.Get(name.Name, name.Version)
-}
-
 // ImageStatusByName returns status of an image tagged with name.
-func (ss *StorageService) ImageStatusByName(name bundle.BundleName) (img *types.Image, err error) {
-	bundle, err := ss.bm.Get(name.Name, name.Version)
+func (ss *StorageService) ImageStatusByName(name NameTag) (img *types.Image, err error) {
+	bundle, err := ss.bm.Get(name.Name, name.Tag)
 	if err != nil {
 		return
 	}
-	uid, username := getUser(bundle.Blueprint.User)
+	// ignore bundle.Blueprint.User
 	img = &types.Image{
 		Id:          fmt.Sprintf("sha256:%s", bundle.Id),
 		RepoTags:    []string{fmt.Sprintf("%s:%s", bundle.Blueprint.Name, bundle.Blueprint.Version)},
 		RepoDigests: []string{fmt.Sprintf("%s@sha256:%s", bundle.Blueprint.Name, bundle.Id)},
 		Size_:       bundle.Size,
-		Uid:         &types.Int64Value{Value: *uid},
-		Username:    username,
+		Uid:         &types.Int64Value{Value: 0},
+		Username:    "root",
 		Pinned:      false,
 	}
 	return
 }
 
 // PullImage imports an image from the specified location.
-func (ss *StorageService) PullImage(ctx context.Context, imageName bundle.BundleName) (id bundle.BundleId, err error) {
+func (ss *StorageService) PullImage(ctx context.Context, imageName NameTag) (id bundle.BundleId, err error) {
 	key := imageName.String()
 	res, err, _ := ss.pullGroup.Do(key, func() (interface{}, error) {
 		if err := ss.bm.AssembleHandler(bundle.AssembleConfig{
 			ClosureName:    imageName.Name,
-			ClosureVersion: imageName.Version,
+			ClosureVersion: imageName.Tag,
 			Overwrite:      true,
 			IgnoreGPU:      false,
 		}); err != nil {
 			return nil, err
 		}
-		b, err := ss.bm.Get(imageName.Name, imageName.Version)
+		b, err := ss.bm.Get(imageName.Name, imageName.Tag)
 		if err != nil {
 			return nil, err
 		}
@@ -171,8 +167,8 @@ func (ss *StorageService) DeleteImage(id bundle.BundleId) error {
 
 // UntagImage removes a name from the specified image, and if it was
 // the only name the image had, removes the image.
-func (ss *StorageService) UntagImage(name bundle.BundleName) error {
-	return ss.bm.DeleteBundle(name.Name, name.Version)
+func (ss *StorageService) UntagImage(name NameTag) error {
+	return ss.bm.DeleteBundle(name.Name, name.Tag)
 }
 
 // UpdatePinnedImagesList updates pinned and pause images list in imageService.
@@ -218,17 +214,4 @@ func CompileRegexpsForPinnedImages(patterns []string) []*regexp.Regexp {
 	}
 
 	return regexps
-}
-
-func PaserDockerName(uri string) bundle.BundleName {
-	var full, version string
-	idx := strings.LastIndex(uri, ":")
-	if idx == -1 {
-		full = uri
-		version = "latest"
-	} else {
-		full = uri[:idx]
-		version = uri[idx+1:]
-	}
-	return bundle.BundleName{Name: full, Version: version}
 }

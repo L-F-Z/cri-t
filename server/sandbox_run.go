@@ -8,7 +8,6 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/L-F-Z/cri-t/internal/hostport"
-	"github.com/L-F-Z/cri-t/internal/log"
 )
 
 const (
@@ -101,15 +100,4 @@ func getHostname(id, hostname string, hostNetwork bool) (string, error) {
 		}
 	}
 	return hostname, nil
-}
-
-func (s *Server) setPodSandboxMountLabel(ctx context.Context, id, mountLabel string) error {
-	_, span := log.StartSpan(ctx)
-	defer span.End()
-	storageMetadata, err := s.StorageService().GetContainerMetadata(id)
-	if err != nil {
-		return err
-	}
-	storageMetadata.SetMountLabel(mountLabel)
-	return s.StorageService().SetContainerMetadata(id, &storageMetadata)
 }

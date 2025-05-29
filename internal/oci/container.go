@@ -24,6 +24,7 @@ import (
 
 	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
+	"github.com/L-F-Z/cri-t/internal/storage"
 	ann "github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
@@ -48,7 +49,7 @@ type Container struct {
 	dir        string
 	stopSignal string
 	// If set, _some_ name of the image imageID; it may have NO RELATIONSHIP to the users’ requested image name.
-	someNameOfTheImage *bundle.BundleName
+	someNameOfTheImage *storage.NameTag
 	imageID            *bundle.BundleId // nil for infra containers.
 	mountPoint         string
 	seccompProfilePath string
@@ -119,7 +120,7 @@ type ContainerState struct {
 // may have NO RELATIONSHIP to the users’ requested image name (and, which
 // should be fixed eventually, may be a repo@digest combination which has never
 // existed on a registry).
-func NewContainer(id, name, bundlePath, logPath string, labels, crioAnnotations, annotations map[string]string, userRequestedImage string, someNameOfTheImage *bundle.BundleName, imageID *bundle.BundleId, someRepoDigest string, md *types.ContainerMetadata, sandbox string, terminal, stdin, stdinOnce bool, runtimeHandler, dir string, created time.Time, stopSignal string) (*Container, error) {
+func NewContainer(id, name, bundlePath, logPath string, labels, crioAnnotations, annotations map[string]string, userRequestedImage string, someNameOfTheImage *storage.NameTag, imageID *bundle.BundleId, someRepoDigest string, md *types.ContainerMetadata, sandbox string, terminal, stdin, stdinOnce bool, runtimeHandler, dir string, created time.Time, stopSignal string) (*Container, error) {
 	state := &ContainerState{}
 	state.Created = created
 
@@ -357,7 +358,7 @@ func (c *Container) UserRequestedImage() string {
 
 // SomeNameOfTheImage returns _some_ name of the image imageID, if any;
 // it may have NO RELATIONSHIP to the users’ requested image name.
-func (c *Container) SomeNameOfTheImage() *bundle.BundleName {
+func (c *Container) SomeNameOfTheImage() *storage.NameTag {
 	return c.someNameOfTheImage
 }
 

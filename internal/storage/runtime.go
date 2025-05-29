@@ -57,7 +57,7 @@ var (
 // with the pod's infrastructure container having the same value for
 // both its pod's ID and its container ID.
 // Pointer arguments can be nil.  All other arguments are required.
-func (ss *StorageService) CreatePodSandbox(podName, podID string, pauseImage bundle.BundleName, containerName, metadataName, uid, namespace string, attempt uint32, labelOptions []string, privileged bool) (ContainerInfo, error) {
+func (ss *StorageService) CreatePodSandbox(podName, podID string, pauseImage NameTag, containerName, metadataName, uid, namespace string, attempt uint32, privileged bool) (ContainerInfo, error) {
 	// Check if we have the specified image.
 	var imageID bundle.BundleId
 	status, err := ss.ImageStatusByName(pauseImage)
@@ -82,13 +82,13 @@ func (ss *StorageService) CreatePodSandbox(podName, podID string, pauseImage bun
 		namespace:          namespace,
 		attempt:            attempt,
 		privileged:         privileged,
-	}, labelOptions)
+	})
 }
 
 // CreateContainer creates a container with the specified ID.
 // Pointer arguments can be nil.
 // All other arguments are required.
-func (ss *StorageService) CreateContainer(podName, podID, userRequestedImage string, imageID bundle.BundleId, containerName, containerID, metadataName string, attempt uint32, labelOptions []string, privileged bool) (ContainerInfo, error) {
+func (ss *StorageService) CreateContainer(podName, podID, userRequestedImage string, imageID bundle.BundleId, containerName, containerID, metadataName string, attempt uint32, privileged bool) (ContainerInfo, error) {
 	return ss.createContainerOrPodSandbox(containerID, &runtimeContainerMetadataTemplate{
 		podName:            podName,
 		podID:              podID,
@@ -100,10 +100,10 @@ func (ss *StorageService) CreateContainer(podName, podID, userRequestedImage str
 		namespace:          "",
 		attempt:            attempt,
 		privileged:         privileged,
-	}, labelOptions)
+	})
 }
 
-func (ss *StorageService) createContainerOrPodSandbox(containerID string, template *runtimeContainerMetadataTemplate, labelOptions []string) (ci ContainerInfo, retErr error) {
+func (ss *StorageService) createContainerOrPodSandbox(containerID string, template *runtimeContainerMetadataTemplate) (ci ContainerInfo, retErr error) {
 	if template.podName == "" || template.podID == "" {
 		return ContainerInfo{}, ErrInvalidPodName
 	}

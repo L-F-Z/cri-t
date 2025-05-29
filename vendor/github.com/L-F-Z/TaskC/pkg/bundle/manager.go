@@ -29,27 +29,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type BundleName struct {
-	Name    string
-	Version string
-}
-
-func (b BundleName) String() string {
-	return b.Name + " " + b.Version
-}
-
-func ParseBundleName(str string) (BundleName, error) {
-	parts := strings.Split(str, " ")
-	if len(parts) == 2 {
-		return BundleName{
-			Name:    parts[0],
-			Version: parts[1],
-		}, nil
-	} else {
-		return BundleName{}, errors.New("failed to parse bundle name")
-	}
-}
-
 type BundleId string
 
 func (b BundleId) String() string {
@@ -232,20 +211,6 @@ func (bm *BundleManager) ListNames() (bundleNames []string) {
 		}
 	}
 	return
-}
-
-func (bm *BundleManager) GetName(id BundleId) BundleName {
-	for name, versions := range bm.bundles {
-		for version, bid := range versions {
-			if id == bid {
-				return BundleName{
-					Name:    name,
-					Version: version,
-				}
-			}
-		}
-	}
-	return BundleName{}
 }
 
 func (bm *BundleManager) Exist(name, version string) (exists bool) {

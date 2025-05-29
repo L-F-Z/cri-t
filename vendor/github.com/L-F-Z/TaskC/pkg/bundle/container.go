@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/L-F-Z/TaskC/internal/utils"
 	specs "github.com/opencontainers/image-spec/specs-go/v1"
@@ -22,10 +23,10 @@ func (bm *BundleManager) CreateContainerById(bundleId BundleId) (id string, root
 	return bm.CreateContainer(bundle)
 }
 
-func (bm *BundleManager) CreateContainerByName(bundleName BundleName) (id string, rootFs string, imgConfig specs.ImageConfig, err error) {
-	bundle, err := bm.Get(bundleName.Name, bundleName.Version)
+func (bm *BundleManager) CreateContainerByName(name string, version string) (id string, rootFs string, imgConfig specs.ImageConfig, err error) {
+	bundle, err := bm.Get(name, version)
 	if err != nil {
-		err = fmt.Errorf("unable to find bundle %s-%s", bundleName.Name, bundleName.Version)
+		err = fmt.Errorf("unable to find bundle %s-%s", name, version)
 		return
 	}
 	return bm.CreateContainer(bundle)
@@ -72,6 +73,39 @@ func (bm *BundleManager) DeleteContainer(id string) (err error) {
 	return os.RemoveAll(containerDir)
 }
 
+func (bm *BundleManager) DeleteAllContainers() (err error) {
+	entries, err := os.ReadDir(bm.containerDir)
+	if err != nil {
+		return fmt.Errorf("failed to read container directory: %v", err)
+	}
+
+	var errs []error
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		containerID := entry.Name()
+		containerDir := filepath.Join(bm.containerDir, containerID)
+		if err := umountContainer(containerDir); err != nil {
+			errs = append(errs, fmt.Errorf("failed to unmount container %s: %v", containerID, err))
+			continue
+		}
+		if err := os.RemoveAll(containerDir); err != nil {
+			errs = append(errs, fmt.Errorf("failed to remove container directory %s: %v", containerID, err))
+		}
+	}
+	if len(errs) > 0 {
+		var combinedErr strings.Builder
+		combinedErr.WriteString("encountered multiple errors while deleting containers:\n")
+		for _, e := range errs {
+			combinedErr.WriteString("- " + e.Error() + "\n")
+		}
+		return fmt.Errorf("%s", combinedErr.String())
+	}
+	return nil
+}
+
 // The parameter of a system call should be limited to one page (4KB)
 // for mount/umount Debugger: $ dmesg | tail -n 20
 func mountContainer(workDir string, bundleDirs []string) (rootFs string, err error) {
@@ -104,16 +138,16 @@ func mountContainer(workDir string, bundleDirs []string) (rootFs string, err err
 	}
 
 	originalDir, err := unix.Getwd()
-	if err != nil {
-		err = fmt.Errorf("failed to get current directory [%v]", err)
-		return
+	if err == nil {
+		defer unix.Chdir(originalDir)
+	} else {
+		defer unix.Chdir("/")
 	}
 	err = unix.Chdir(link)
 	if err != nil {
 		err = fmt.Errorf("failed to change work directory [%v]", err)
 		return
 	}
-	defer unix.Chdir(originalDir)
 
 	param := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", strings.Join(lowerdirs, ":"), upper, work)
 	err = unix.Mount("overlay", rootFs, "overlay", 0, param)
@@ -128,5 +162,12 @@ func umountContainer(workDir string) (err error) {
 	if !utils.PathExists(rootFs) {
 		return fmt.Errorf("dir %s not exists", rootFs)
 	}
-	return unix.Unmount(rootFs, 0)
+	err = unix.Unmount(rootFs, 0)
+	if err != nil {
+		errno, ok := err.(syscall.Errno)
+		if ok && errno == syscall.EINVAL || errno == syscall.ENOENT {
+			return nil
+		}
+	}
+	return
 }

@@ -63,12 +63,6 @@ type RuntimeContainerMetadata struct {
 	Privileged bool `json:"privileged,omitempty"` // Applicable to both PodSandboxes and Containers
 }
 
-// SetMountLabel updates the mount label held by a RuntimeContainerMetadata
-// object.
-func (metadata *RuntimeContainerMetadata) SetMountLabel(mountLabel string) {
-	metadata.MountLabel = mountLabel
-}
-
 // runtimeContainerMetadataTemplate is an in-memory subset of RuntimeContainerMetadata.
 type runtimeContainerMetadataTemplate struct {
 	// The pod's name and ID, kept for use by upper layers in determining
