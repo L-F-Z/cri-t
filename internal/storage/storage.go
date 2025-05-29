@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/L-F-Z/TaskC/pkg/bundle"
@@ -60,7 +59,7 @@ func (ss *StorageService) ListImages() (result []*types.Image, err error) {
 		uid, username := getUser(bundle.Blueprint.User)
 		img := &types.Image{
 			Id:          fmt.Sprintf("sha256:%s", bundle.Id),
-			RepoTags:    []string{},
+			RepoTags:    []string{fmt.Sprintf("%s:%s", bundle.Blueprint.Name, bundle.Blueprint.Version)},
 			RepoDigests: []string{fmt.Sprintf("%s@sha256:%s", bundle.Blueprint.Name, bundle.Id)},
 			Size_:       bundle.Size,
 			Uid:         &types.Int64Value{Value: *uid},
@@ -75,20 +74,23 @@ func (ss *StorageService) ListImages() (result []*types.Image, err error) {
 // getUserFromImage gets uid or user name of the image user.
 // If user is numeric, it will be treated as uid; or else, it is treated as user name.
 func getUser(user string) (id *int64, username string) {
-	// return both empty if user is not specified in the image.
-	if user == "" {
-		return nil, ""
-	}
-	// split instances where the id may contain user:group
-	user = strings.Split(user, ":")[0]
-	// user could be either uid or user name. Try to interpret as numeric uid.
-	uid, err := strconv.ParseInt(user, 10, 64)
-	if err != nil {
-		// If user is non numeric, assume it's user name.
-		return nil, user
-	}
-	// If user is a numeric uid.
-	return &uid, ""
+	// // return both empty if user is not specified in the image.
+	// if user == "" {
+	// 	user = "0:0"
+	// }
+	// // split instances where the id may contain user:group
+	// user = strings.Split(user, ":")[0]
+	// // user could be either uid or user name. Try to interpret as numeric uid.
+	// uid, err := strconv.ParseInt(user, 10, 64)
+	// if err != nil {
+	// 	// If user is non numeric, assume it's user name.
+	// 	uid = 0
+	// 	return &uid, user
+	// }
+	// // If user is a numeric uid.
+	// return &uid, ""
+	var uid int64 = 0
+	return &uid, "root"
 }
 
 // ImageStatusByID returns status of a single image
@@ -100,14 +102,22 @@ func (ss *StorageService) ImageStatusByID(id bundle.BundleId) (img *types.Image,
 	uid, username := getUser(bundle.Blueprint.User)
 	img = &types.Image{
 		Id:          fmt.Sprintf("sha256:%s", bundle.Id),
-		RepoTags:    []string{},
+		RepoTags:    []string{fmt.Sprintf("%s:%s", bundle.Blueprint.Name, bundle.Blueprint.Version)},
 		RepoDigests: []string{fmt.Sprintf("%s@sha256:%s", bundle.Blueprint.Name, bundle.Id)},
-		Size_:       0,
+		Size_:       bundle.Size,
 		Uid:         &types.Int64Value{Value: *uid},
 		Username:    username,
 		Pinned:      false,
 	}
 	return
+}
+
+func (ss *StorageService) GetBundleByID(id bundle.BundleId) (bundle *bundle.Bundle, err error) {
+	return ss.bm.GetById(id)
+}
+
+func (ss *StorageService) GetBundleByName(name bundle.BundleName) (bundle *bundle.Bundle, err error) {
+	return ss.bm.Get(name.Name, name.Version)
 }
 
 // ImageStatusByName returns status of an image tagged with name.
@@ -119,9 +129,9 @@ func (ss *StorageService) ImageStatusByName(name bundle.BundleName) (img *types.
 	uid, username := getUser(bundle.Blueprint.User)
 	img = &types.Image{
 		Id:          fmt.Sprintf("sha256:%s", bundle.Id),
-		RepoTags:    []string{},
+		RepoTags:    []string{fmt.Sprintf("%s:%s", bundle.Blueprint.Name, bundle.Blueprint.Version)},
 		RepoDigests: []string{fmt.Sprintf("%s@sha256:%s", bundle.Blueprint.Name, bundle.Id)},
-		Size_:       0,
+		Size_:       bundle.Size,
 		Uid:         &types.Int64Value{Value: *uid},
 		Username:    username,
 		Pinned:      false,
@@ -208,4 +218,17 @@ func CompileRegexpsForPinnedImages(patterns []string) []*regexp.Regexp {
 	}
 
 	return regexps
+}
+
+func PaserDockerName(uri string) bundle.BundleName {
+	var full, version string
+	idx := strings.LastIndex(uri, ":")
+	if idx == -1 {
+		full = uri
+		version = "latest"
+	} else {
+		full = uri[:idx]
+		version = uri[idx+1:]
+	}
+	return bundle.BundleName{Name: full, Version: version}
 }

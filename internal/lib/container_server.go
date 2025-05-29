@@ -412,10 +412,7 @@ func (c *ContainerServer) LoadContainer(ctx context.Context, id string) (retErr 
 
 	var someNameOfTheImage *bundle.BundleName
 	if s, ok := m.Annotations[annotations.SomeNameOfTheImage]; ok && s != "" {
-		name, err := bundle.ParseBundleName(s)
-		if err != nil {
-			return fmt.Errorf("invalid %s annotation %q: %w", annotations.SomeNameOfTheImage, s, err)
-		}
+		name := storage.PaserDockerName(s)
 		someNameOfTheImage = &name
 	}
 

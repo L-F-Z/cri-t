@@ -6,8 +6,8 @@ import (
 	"syscall"
 	"time"
 
-	libctrcgroups "github.com/opencontainers/runc/libcontainer/cgroups"
-	"github.com/opencontainers/runc/libcontainer/cgroups/manager"
+	libctrcgroups "github.com/opencontainers/cgroups"
+	"github.com/opencontainers/cgroups/manager"
 	cgcfgs "github.com/opencontainers/runc/libcontainer/configs"
 
 	"github.com/L-F-Z/cri-t/internal/config/node"

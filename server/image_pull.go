@@ -14,6 +14,7 @@ import (
 
 	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/storage"
 	"github.com/L-F-Z/cri-t/server/metrics"
 )
 
@@ -93,10 +94,7 @@ func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (bundle
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 
-	name, err := bundle.ParseBundleName(pullArgs.image)
-	if err != nil {
-		return "", err
-	}
+	name := storage.PaserDockerName(pullArgs.image)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		log.Debugf(ctx, "Pull timeout is: %s", time.Until(deadline))

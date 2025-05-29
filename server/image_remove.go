@@ -6,7 +6,6 @@ import (
 
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/log"
 )
 
@@ -32,10 +31,16 @@ func (s *Server) removeImage(ctx context.Context, imageRef string) (untagErr err
 	_, span := log.StartSpan(ctx)
 	defer span.End()
 
-	name, err := bundle.ParseBundleName(imageRef)
-	if err != nil {
-		return err
-	}
-	// TODO: Add --image-volume support
-	return s.StorageService().UntagImage(name)
+	// XXX: imageRef will be a prefix of IMAGE-ID
+	// Raw ImageID: sha256:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+	// Possible input: aaaaaaaa-bb, aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee
+
+	return errors.New("not implemented")
+
+	// name, err := bundle.ParseBundleName(imageRef)
+	// if err != nil {
+	// 	return err
+	// }
+	// // TODO: Add --image-volume support
+	// return s.StorageService().UntagImage(name)
 }

@@ -34,6 +34,7 @@ import (
 	"github.com/L-F-Z/cri-t/internal/log"
 	oci "github.com/L-F-Z/cri-t/internal/oci"
 	"github.com/L-F-Z/cri-t/internal/runtimehandlerhooks"
+	"github.com/L-F-Z/cri-t/internal/storage"
 	crioann "github.com/L-F-Z/cri-t/pkg/annotations"
 )
 
@@ -85,14 +86,33 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		return nil, err
 	}
 
-	bundleName, err := bundle.ParseBundleName(userRequestedImage)
-	if err != nil {
-		return nil, err
-	}
+	var bundleName bundle.BundleName
+	var imgResult *types.Image
 
-	imgResult, err := s.StorageService().ImageStatusByName(bundleName)
-	if err != nil {
-		return nil, err
+	if strings.HasPrefix(userRequestedImage, "sha256:") {
+		id := bundle.BundleId(strings.TrimPrefix(userRequestedImage, "sha256:"))
+
+		imgResult, err = s.StorageService().ImageStatusByID(id)
+		if err != nil {
+			return nil, err
+		}
+
+		b, err := s.StorageService().GetBundleByID(id)
+		if err != nil {
+			return nil, err
+		}
+
+		bundleName = bundle.BundleName{
+			Name:    b.Blueprint.Name,
+			Version: b.Blueprint.Version,
+		}
+
+	} else {
+		bundleName := storage.PaserDockerName(userRequestedImage)
+		imgResult, err = s.StorageService().ImageStatusByName(bundleName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	imageID := bundle.BundleId(imgResult.Id)
@@ -373,7 +393,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	created := time.Now()
 	seccompRef := types.SecurityProfile_Unconfined.String()
 
-	if err := s.FilterDisallowedAnnotations(sb.Annotations(), imgResult.Spec.Annotations, sb.RuntimeHandler()); err != nil {
+	if err := s.FilterDisallowedAnnotations(sb.Annotations(), imgResult.GetSpec().GetAnnotations(), sb.RuntimeHandler()); err != nil {
 		return nil, fmt.Errorf("filter image annotations: %w", err)
 	}
 
@@ -388,7 +408,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 			containerID,
 			ctr.Config().Metadata.Name,
 			sb.Annotations(),
-			imgResult.Spec.Annotations,
+			imgResult.GetSpec().GetAnnotations(),
 			specgen,
 			securityContext.Seccomp,
 		)

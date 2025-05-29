@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -15,6 +16,13 @@ func (s *Server) ImageFsInfo(context.Context, *types.ImageFsInfoRequest) (*types
 	// TODO: move this function to TaskC
 	bundleRoot := "/var/lib/taskc/Bundle"
 	instanceRoot := "/var/lib/taskc/Instance"
+
+	for _, path := range []string{bundleRoot, instanceRoot} {
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return nil, fmt.Errorf("unable to create directory %s: %w", path, err)
+		}
+	}
+
 	bundleUsage, err := getUsage(bundleRoot)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get usage for %s: %w", bundleRoot, err)

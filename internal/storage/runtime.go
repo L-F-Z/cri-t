@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	json "github.com/json-iterator/go"
@@ -134,7 +135,12 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 	now := time.Now()
 	metadata.CreatedAt = now.Unix()
 
-	id, rootFs, imgConfig, err := ss.bm.CreateContainerById(template.imageID)
+	bundleId := template.imageID
+	pureId := strings.SplitN(bundleId.String(), ":", 2)
+	if len(pureId) == 2 {
+		bundleId = bundle.BundleId(pureId[1])
+	}
+	id, rootFs, imgConfig, err := ss.bm.CreateContainerById(bundleId)
 	if err != nil {
 		if metadata.Pod {
 			logrus.Debugf("Failed to create pod sandbox %s(%s): %v", metadata.PodName, metadata.PodID, err)
@@ -193,7 +199,7 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 		return ContainerInfo{}, err
 	}
 
-	return ContainerInfo{
+	info := ContainerInfo{
 		ID:           id,
 		Names:        []string{},
 		ImageID:      template.imageID.String(),
@@ -204,7 +210,19 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 		Metadata:     string(mdata),
 		ProcessLabel: "",
 		MountLabel:   "",
-	}, nil
+	}
+
+	err = ss.saveInfo(containerID, info)
+	if err != nil {
+		return ContainerInfo{}, err
+	}
+
+	err = ss.saveInfo(id, info)
+	if err != nil {
+		return ContainerInfo{}, err
+	}
+
+	return info, nil
 }
 
 // DeleteContainer deletes a container, unmounting it first if need be.
@@ -216,16 +234,25 @@ func (ss *StorageService) DeleteContainer(ctx context.Context, idOrName string) 
 	if idOrName == "" {
 		return ErrInvalidContainerID
 	}
-	err := ss.bm.DeleteContainer(idOrName)
+
+	info, err := ss.loadInfo(idOrName)
+	if err != nil {
+		log.Warnf(ctx, "Failed to get container info %s: %v", idOrName, err)
+		return err
+	}
+
+	err = ss.bm.DeleteContainer(info.ID)
 	if err != nil {
 		log.Debugf(ctx, "Failed to delete container %q: %v", idOrName, err)
 		return err
 	}
+
 	infoFile := filepath.Join(ss.info, idOrName)
 	err = os.Remove(infoFile)
 	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete metadata file: %w", err)
 	}
+
 	return nil
 }
 

@@ -8,8 +8,8 @@ import (
 	json "github.com/json-iterator/go"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/log"
+	"github.com/L-F-Z/cri-t/internal/storage"
 )
 
 // ImageStatus returns the status of the image.
@@ -38,7 +38,7 @@ func (s *Server) ImageStatus(ctx context.Context, req *types.ImageStatusRequest)
 			RepoDigests: status.RepoDigests,
 			Size_:       uint64(status.Size()),
 			Spec: &types.ImageSpec{
-				Annotations: status.Spec.Annotations,
+				Annotations: status.GetSpec().GetAnnotations(),
 			},
 			Pinned: status.Pinned,
 		},
@@ -59,15 +59,13 @@ func (s *Server) ImageStatus(ctx context.Context, req *types.ImageStatusRequest)
 // storageImageStatus calls ImageStatus for a k8s ImageSpec.
 // Returns (nil, nil) if image was not found.
 func (s *Server) storageImageStatus(ctx context.Context, spec types.ImageSpec) (*types.Image, error) {
-	bundleName, err := bundle.ParseBundleName(spec.Image)
-	if err == nil {
-		return s.StorageService().ImageStatusByName(bundleName)
-	}
-	bundleName, err = bundle.ParseBundleName(spec.UserSpecifiedImage)
-	if err == nil {
-		return s.StorageService().ImageStatusByName(bundleName)
-	}
-	return s.StorageService().ImageStatusByID(bundle.BundleId(spec.Image))
+	bundleName := storage.PaserDockerName(spec.Image)
+	return s.StorageService().ImageStatusByName(bundleName)
+	// bundleName, err = storage.PaserDockerName(spec.UserSpecifiedImage)
+	// if err == nil {
+	// 	return s.StorageService().ImageStatusByName(bundleName)
+	// }
+	// return s.StorageService().ImageStatusByID(bundle.BundleId(spec.Image))
 }
 
 func createImageInfo(result *types.Image) (map[string]string, error) {

@@ -1377,8 +1377,7 @@ func validateExecutablePath(executable, currentPath string) (string, error) {
 
 // ParsePauseImage parses the .PauseImage value as into a validated, well-typed value.
 func (c *ImageConfig) ParsePauseImage() bundle.BundleName {
-	name, _ := bundle.ParseBundleName(c.PauseImage)
-	return name
+	return storage.PaserDockerName(c.PauseImage)
 }
 
 // Validate is the main entry point for network configuration validation.

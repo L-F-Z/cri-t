@@ -317,10 +317,6 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	// bind mount the pod shm
 	g.AddMount(mnt)
 
-	err = s.setPodSandboxMountLabel(ctx, sboxID, mountLabel)
-	if err != nil {
-		return nil, err
-	}
 
 	if err := s.CtrIDIndex().Add(sboxID); err != nil {
 		return nil, err
