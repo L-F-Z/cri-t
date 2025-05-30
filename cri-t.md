@@ -2,6 +2,9 @@
 ```bash
 echo 'net.ipv4.ip_forward = 1' | sudo tee /etc/sysctl.d/k8s.conf
 sysctl --system
+sysctl -w net.ipv4.ip_forward=1
+modprobe br_netfilter
+swapoff -a
 ```
 
 ## Install the dependencies for adding repositories
@@ -36,40 +39,44 @@ systemctl disable crio
 systemctl mask crio
 ```
 
-## Configure a Container Network Interface (CNI) plugin
+## Configure Container Network Interface (CNI)
 ```bash
 mv /etc/cni/net.d/10-crio-bridge.conflist.disabled /etc/cni/net.d/10-crio-bridge.conflist
 ```
 
-## Start CRI-T
+## Start CRI-T and Bootstrap a Cluster
 ```bash
-wget https://go.dev/dl/go1.24.3.linux-amd64.tar.gz
-rm -rf /usr/local/go && tar -C /usr/local -xzf go1.24.3.linux-amd64.tar.gz
-echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee -a /etc/profile
-apt install -y git
-git clone https://github.com/L-F-Z/cri-t
-cd cri-t
-go run cmd/crio/main.go
-```
-
-## Bootstrap a cluster
-```bash
-swapoff -a
-modprobe br_netfilter
-sysctl -w net.ipv4.ip_forward=1
+./crit
 kubeadm config images list
 kubeadm config images pull --cri-socket unix:///var/run/crio/crio.sock
-kubeadm init --upload-certs --cri-socket unix:///var/run/crio/crio.sock --v=5
 export KUBECONFIG=/etc/kubernetes/admin.conf
 ```
 
-## Use Kubectl
+## For Control Plane
 ```bash
+# Control Plane
+kubeadm init --upload-certs --cri-socket unix:///var/run/crio/crio.sock --v=5
+kubeadm token create --print-join-command
+# Node
+kubeadm join *** --cri-socket unix:///var/run/crio/crio.sock
+# Control Plane
+kubectl get nodes
 kubectl get pods -A
+```
+
+## Run yolo11 Example
+```bash
+kubectl apply -f k8s-test.yaml
+kubectl exec -it yolo11-test -- sh
+kubectl delete pod yolo11-test
+```
+for debug
+```bash
+kubectl describe pod yolo11-test
+kubectl logs yolo11-test --previous
 kubectl -n kube-system describe pods <name>
 kubectl -n kube-system logs <name>
 ```
-https://github.com/cri-o/cri-o/blob/main/tutorials/crictl.md
 
 ## Reset a cluster
 ```bash

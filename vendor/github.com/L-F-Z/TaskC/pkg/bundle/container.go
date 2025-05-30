@@ -47,7 +47,7 @@ func (bm *BundleManager) CreateContainer(bundle *Bundle) (id string, rootFs stri
 
 	imgConfig = specs.ImageConfig{
 		User:       bundle.Blueprint.User,
-		Env:        bundle.Blueprint.EnvVar,
+		Env:        append(bundle.Blueprint.EnvVar, "PYTHONPATH=/usr/local/lib/python-site-packages:$PYTHONPATH"),
 		Entrypoint: bundle.Blueprint.EntryPoint,
 		Cmd:        bundle.Blueprint.Command,
 		WorkingDir: bundle.Blueprint.WorkDir,
