@@ -24,7 +24,6 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/config/device"
 	"github.com/L-F-Z/cri-t/internal/config/node"
 	"github.com/L-F-Z/cri-t/internal/config/rdt"
@@ -90,14 +89,12 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	var imgResult *types.Image
 
 	if strings.HasPrefix(userRequestedImage, "sha256:") {
-		id := bundle.BundleId(strings.TrimPrefix(userRequestedImage, "sha256:"))
-
-		imgResult, err = s.StorageService().ImageStatusByID(id)
+		imgResult, err = s.StorageService().ImageStatusByID(userRequestedImage)
 		if err != nil {
 			return nil, err
 		}
 
-		b, err := s.StorageService().GetBundleByID(id)
+		b, err := s.StorageService().GetBundleByID(userRequestedImage)
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +112,6 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		}
 	}
 
-	imageID := bundle.BundleId(imgResult.Id)
 	someRepoDigest := ""
 	if len(imgResult.RepoDigests) > 0 {
 		someRepoDigest = imgResult.RepoDigests[0]
@@ -129,7 +125,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 	s.resourceStore.SetStageForResource(ctx, ctr.Name(), "container storage creation")
 	containerInfo, err := s.StorageService().CreateContainer(
 		sb.Name(), sb.ID(),
-		userRequestedImage, imageID,
+		userRequestedImage, imgResult.Id,
 		containerName, containerID,
 		metadata.Name,
 		metadata.Attempt,
@@ -555,7 +551,7 @@ func (s *Server) createSandboxContainer(ctx context.Context, ctr ctrfactory.Cont
 		Name:    metadata.Name,
 		Attempt: metadata.Attempt,
 	}
-	ociContainer, err := oci.NewContainer(containerID, containerName, containerInfo.RunDir, logPath, labels, crioAnnotations, ctr.Config().Annotations, userRequestedImage, &bundleName, &imageID, someRepoDigest, criMetadata, sb.ID(), containerConfig.Tty, containerConfig.Stdin, containerConfig.StdinOnce, sb.RuntimeHandler(), containerInfo.Dir, created, containerImageConfig.Config.StopSignal)
+	ociContainer, err := oci.NewContainer(containerID, containerName, containerInfo.RunDir, logPath, labels, crioAnnotations, ctr.Config().Annotations, userRequestedImage, &bundleName, imgResult.Id, someRepoDigest, criMetadata, sb.ID(), containerConfig.Tty, containerConfig.Stdin, containerConfig.StdinOnce, sb.RuntimeHandler(), containerInfo.Dir, created, containerImageConfig.Config.StopSignal)
 	if err != nil {
 		return nil, err
 	}

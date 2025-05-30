@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func (bm *BundleManager) CreateContainerById(bundleId BundleId) (id string, rootFs string, imgConfig specs.ImageConfig, err error) {
+func (bm *BundleManager) CreateContainerById(bundleId string) (id string, rootFs string, imgConfig specs.ImageConfig, err error) {
 	bundle, err := bm.GetById(bundleId)
 	if err != nil {
 		err = fmt.Errorf("unable to find bundle %s", bundleId)

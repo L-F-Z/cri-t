@@ -37,17 +37,13 @@ func (s *Server) ContainerStatus(ctx context.Context, req *types.ContainerStatus
 	if someNameOfTheImage := c.SomeNameOfTheImage(); someNameOfTheImage != nil {
 		imageNameInSpec = someNameOfTheImage.String()
 	}
-	imageID := ""
-	if c.ImageID() != nil {
-		imageID = (*c.ImageID()).String()
-	}
 	resp := &types.ContainerStatusResponse{
 		Status: &types.ContainerStatus{
 			Id:          containerID,
 			Metadata:    c.Metadata(),
 			Labels:      c.Labels(),
 			Annotations: c.Annotations(),
-			ImageId:     imageID,
+			ImageId:     c.ImageID(),
 			ImageRef:    imageRef,
 			Image: &types.ImageSpec{
 				Image: imageNameInSpec,

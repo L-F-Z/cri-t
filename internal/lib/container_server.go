@@ -18,7 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/hostport"
 	"github.com/L-F-Z/cri-t/internal/lib/constants"
 	"github.com/L-F-Z/cri-t/internal/lib/sandbox"
@@ -275,7 +274,7 @@ func (c *ContainerServer) LoadSandbox(ctx context.Context, id string) (sb *sandb
 	}
 
 	if !wasSpoofed {
-		scontainer, err = oci.NewContainer(m.Annotations[annotations.ContainerID], cname, sandboxPath, m.Annotations[annotations.LogPath], labels, m.Annotations, kubeAnnotations, m.Annotations[annotations.UserRequestedImage], nil, nil, "", nil, id, false, false, false, sb.RuntimeHandler(), sandboxDir, created, m.Annotations["org.opencontainers.image.stopSignal"])
+		scontainer, err = oci.NewContainer(m.Annotations[annotations.ContainerID], cname, sandboxPath, m.Annotations[annotations.LogPath], labels, m.Annotations, kubeAnnotations, m.Annotations[annotations.UserRequestedImage], nil, "", "", nil, id, false, false, false, sb.RuntimeHandler(), sandboxDir, created, m.Annotations["org.opencontainers.image.stopSignal"])
 		if err != nil {
 			return sb, err
 		}
@@ -416,14 +415,7 @@ func (c *ContainerServer) LoadContainer(ctx context.Context, id string) (retErr 
 		someNameOfTheImage = &name
 	}
 
-	var imageID *bundle.BundleId
-	if s, ok := m.Annotations[annotations.ImageRef]; ok {
-		id, err := bundle.ParseBundleId(s)
-		if err != nil {
-			return fmt.Errorf("invalid %s annotation %q: %w", annotations.ImageRef, s, err)
-		}
-		imageID = &id
-	}
+	imageID := m.Annotations[annotations.ImageRef]
 
 	platformRuntimePath, ok := m.Annotations[annotations.PlatformRuntimePath]
 	if !ok {

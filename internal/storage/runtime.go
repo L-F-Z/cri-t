@@ -13,7 +13,6 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/log"
 )
 
@@ -59,16 +58,16 @@ var (
 // Pointer arguments can be nil.  All other arguments are required.
 func (ss *StorageService) CreatePodSandbox(podName, podID string, pauseImage NameTag, containerName, metadataName, uid, namespace string, attempt uint32, privileged bool) (ContainerInfo, error) {
 	// Check if we have the specified image.
-	var imageID bundle.BundleId
+	var imageID string
 	status, err := ss.ImageStatusByName(pauseImage)
-	if err != nil {
+	if err == nil {
+		imageID = status.Id
+	} else {
 		var err error
 		imageID, err = ss.PullImage(context.Background(), pauseImage)
 		if err != nil {
 			return ContainerInfo{}, err
 		}
-	} else {
-		imageID, _ = bundle.ParseBundleId(status.Id)
 	}
 
 	return ss.createContainerOrPodSandbox(podID, &runtimeContainerMetadataTemplate{
@@ -88,7 +87,7 @@ func (ss *StorageService) CreatePodSandbox(podName, podID string, pauseImage Nam
 // CreateContainer creates a container with the specified ID.
 // Pointer arguments can be nil.
 // All other arguments are required.
-func (ss *StorageService) CreateContainer(podName, podID, userRequestedImage string, imageID bundle.BundleId, containerName, containerID, metadataName string, attempt uint32, privileged bool) (ContainerInfo, error) {
+func (ss *StorageService) CreateContainer(podName, podID, userRequestedImage string, imageID string, containerName, containerID, metadataName string, attempt uint32, privileged bool) (ContainerInfo, error) {
 	return ss.createContainerOrPodSandbox(containerID, &runtimeContainerMetadataTemplate{
 		podName:            podName,
 		podID:              podID,
@@ -135,12 +134,7 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 	now := time.Now()
 	metadata.CreatedAt = now.Unix()
 
-	bundleId := template.imageID
-	pureId := strings.SplitN(bundleId.String(), ":", 2)
-	if len(pureId) == 2 {
-		bundleId = bundle.BundleId(pureId[1])
-	}
-	id, rootFs, imgConfig, err := ss.bm.CreateContainerById(bundleId)
+	id, rootFs, imgConfig, err := ss.bm.CreateContainerById(strings.TrimPrefix(template.imageID, "sha256:"))
 	if err != nil {
 		if metadata.Pod {
 			logrus.Debugf("Failed to create pod sandbox %s(%s): %v", metadata.PodName, metadata.PodID, err)
@@ -202,7 +196,7 @@ func (ss *StorageService) createContainerOrPodSandbox(containerID string, templa
 	info := ContainerInfo{
 		ID:           id,
 		Names:        []string{},
-		ImageID:      template.imageID.String(),
+		ImageID:      template.imageID,
 		Dir:          containerDir,
 		RunDir:       containerRunDir,
 		RootFs:       rootFs,

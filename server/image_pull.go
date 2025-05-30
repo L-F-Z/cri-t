@@ -12,7 +12,6 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	crierrors "k8s.io/cri-api/pkg/errors"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/log"
 	"github.com/L-F-Z/cri-t/internal/storage"
 	"github.com/L-F-Z/cri-t/server/metrics"
@@ -89,7 +88,7 @@ func (s *Server) PullImage(ctx context.Context, req *types.PullImageRequest) (*t
 // pullImage performs the actual pull operation of PullImage. Used to separate
 // the pull implementation from the pullCache logic in PullImage and improve
 // readability and maintainability.
-func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (bundle.BundleId, error) {
+func (s *Server) pullImage(ctx context.Context, pullArgs *pullArguments) (string, error) {
 	var err error
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()

@@ -23,7 +23,6 @@ import (
 	"k8s.io/kubelet/pkg/cri/streaming"
 	kubetypes "k8s.io/kubelet/pkg/types"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/cert"
 	"github.com/L-F-Z/cri-t/internal/config/seccomp"
 	"github.com/L-F-Z/cri-t/internal/hostport"
@@ -108,7 +107,7 @@ type pullOperation struct {
 	wg sync.WaitGroup
 	// imageRef is the reference of the actually pulled image; it is always
 	// in a full repo@digest format, resolving short names and tags
-	bundleId bundle.BundleId
+	bundleId string
 	// err is the error indicating if the pull operation has succeeded or not.
 	err error
 }
@@ -142,10 +141,10 @@ func (s *Server) getPortForward(req *types.PortForwardRequest) (*types.PortForwa
 // For every sandbox it fails to restore, it starts a cleanup routine attempting to call CNI DEL
 // For every container it fails to restore, it returns that containers image, so that
 // it can be cleaned up (if we're using internal_wipe).
-func (s *Server) restore(ctx context.Context) []bundle.BundleId {
+func (s *Server) restore(ctx context.Context) []string {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
-	containersAndTheirImages := map[string]bundle.BundleId{}
+	containersAndTheirImages := make(map[string]string)
 	containers, err := s.StorageService().Containers()
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Warnf(ctx, "Could not read containers and sandboxes: %v", err)
@@ -165,12 +164,7 @@ func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 			pods[containers[i].ID] = &metadata
 		} else {
 			podContainers[containers[i].ID] = &metadata
-			imageID, err := bundle.ParseBundleId(containers[i].ImageID)
-			if err != nil {
-				log.Warnf(ctx, "Error parsing image ID %q of container %q: %v, ignoring", containers[i].ImageID, containers[i].ID, err)
-				continue
-			}
-			containersAndTheirImages[containers[i].ID] = imageID
+			containersAndTheirImages[containers[i].ID] = containers[i].ImageID
 		}
 	}
 
@@ -279,7 +273,7 @@ func (s *Server) restore(ctx context.Context) []bundle.BundleId {
 	}
 
 	// Return a slice of images to remove, if internal_wipe is set.
-	imagesOfDeletedContainers := []bundle.BundleId{}
+	var imagesOfDeletedContainers []string
 	for _, image := range containersAndTheirImages {
 		imagesOfDeletedContainers = append(imagesOfDeletedContainers, image)
 	}
@@ -558,7 +552,7 @@ func useDefaultUmask(ctx context.Context) {
 // wipeIfAppropriate takes a list of images. If the config's VersionFilePersist
 // indicates an upgrade has happened, it attempts to wipe that list of images.
 // This attempt is best-effort.
-func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []bundle.BundleId) {
+func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []string) {
 	ctx, span := log.StartSpan(ctx)
 	defer span.End()
 	if !s.config.InternalWipe {
@@ -589,7 +583,7 @@ func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []bundle.
 	}
 
 	// Translate to a map so the images are only attempted to be deleted once.
-	imageMapToDelete := make(map[bundle.BundleId]struct{})
+	imageMapToDelete := make(map[string]struct{})
 	for _, img := range imagesToDelete {
 		imageMapToDelete[img] = struct{}{}
 	}
@@ -599,8 +593,8 @@ func (s *Server) wipeIfAppropriate(ctx context.Context, imagesToDelete []bundle.
 		// Best-effort append to imageMapToDelete
 		if ctrs, err := s.ContainerServer.ListContainers(); err == nil {
 			for _, ctr := range ctrs {
-				if id := ctr.ImageID(); id != nil {
-					imageMapToDelete[*id] = struct{}{}
+				if ctr.ImageID() != "" {
+					imageMapToDelete[ctr.ImageID()] = struct{}{}
 				}
 			}
 		}

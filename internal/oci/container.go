@@ -22,7 +22,6 @@ import (
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	kubeletTypes "k8s.io/kubelet/pkg/types"
 
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	"github.com/L-F-Z/cri-t/internal/config/nsmgr"
 	"github.com/L-F-Z/cri-t/internal/storage"
 	ann "github.com/L-F-Z/cri-t/pkg/annotations"
@@ -50,7 +49,7 @@ type Container struct {
 	stopSignal string
 	// If set, _some_ name of the image imageID; it may have NO RELATIONSHIP to the users’ requested image name.
 	someNameOfTheImage *storage.NameTag
-	imageID            *bundle.BundleId // nil for infra containers.
+	imageID            string // "" for infra containers.
 	mountPoint         string
 	seccompProfilePath string
 	conmonCgroupfsPath string
@@ -120,16 +119,11 @@ type ContainerState struct {
 // may have NO RELATIONSHIP to the users’ requested image name (and, which
 // should be fixed eventually, may be a repo@digest combination which has never
 // existed on a registry).
-func NewContainer(id, name, bundlePath, logPath string, labels, crioAnnotations, annotations map[string]string, userRequestedImage string, someNameOfTheImage *storage.NameTag, imageID *bundle.BundleId, someRepoDigest string, md *types.ContainerMetadata, sandbox string, terminal, stdin, stdinOnce bool, runtimeHandler, dir string, created time.Time, stopSignal string) (*Container, error) {
+func NewContainer(id, name, bundlePath, logPath string, labels, crioAnnotations, annotations map[string]string, userRequestedImage string, someNameOfTheImage *storage.NameTag, imageID string, someRepoDigest string, md *types.ContainerMetadata, sandbox string, terminal, stdin, stdinOnce bool, runtimeHandler, dir string, created time.Time, stopSignal string) (*Container, error) {
 	state := &ContainerState{}
 	state.Created = created
 
-	imageIDString := ""
-	if imageID != nil {
-		imageIDString = string(*imageID)
-	}
-
-	externalImageRef := imageIDString
+	externalImageRef := imageID
 	if someRepoDigest != "" {
 		externalImageRef = someRepoDigest
 	}
@@ -146,7 +140,7 @@ func NewContainer(id, name, bundlePath, logPath string, labels, crioAnnotations,
 				Image: userRequestedImage,
 			},
 			ImageRef: externalImageRef,
-			ImageId:  imageIDString,
+			ImageId:  imageID,
 		},
 		name:               name,
 		bundlePath:         bundlePath,
@@ -185,7 +179,7 @@ func NewSpoofedContainer(id, name string, labels map[string]string, sandbox stri
 			Image: &types.ImageSpec{},
 		},
 		name:    name,
-		imageID: nil,
+		imageID: "",
 		spoofed: true,
 		state:   state,
 		dir:     dir,
@@ -363,7 +357,7 @@ func (c *Container) SomeNameOfTheImage() *storage.NameTag {
 }
 
 // ImageID returns the image ID of the container, or nil for infra containers.
-func (c *Container) ImageID() *bundle.BundleId {
+func (c *Container) ImageID() string {
 	return c.imageID
 }
 

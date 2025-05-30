@@ -94,8 +94,8 @@ func (ss *StorageService) ListImages() (result []*types.Image, err error) {
 }
 
 // ImageStatusByID returns status of a single image
-func (ss *StorageService) ImageStatusByID(id bundle.BundleId) (img *types.Image, err error) {
-	bundle, err := ss.bm.GetById(id)
+func (ss *StorageService) ImageStatusByID(id string) (img *types.Image, err error) {
+	bundle, err := ss.bm.GetById(strings.TrimPrefix(id, "sha256:"))
 	if err != nil {
 		return
 	}
@@ -112,8 +112,8 @@ func (ss *StorageService) ImageStatusByID(id bundle.BundleId) (img *types.Image,
 	return
 }
 
-func (ss *StorageService) GetBundleByID(id bundle.BundleId) (bundle *bundle.Bundle, err error) {
-	return ss.bm.GetById(id)
+func (ss *StorageService) GetBundleByID(id string) (bundle *bundle.Bundle, err error) {
+	return ss.bm.GetById(strings.TrimPrefix(id, "sha256:"))
 }
 
 // ImageStatusByName returns status of an image tagged with name.
@@ -136,9 +136,9 @@ func (ss *StorageService) ImageStatusByName(name NameTag) (img *types.Image, err
 }
 
 // PullImage imports an image from the specified location.
-func (ss *StorageService) PullImage(ctx context.Context, imageName NameTag) (id bundle.BundleId, err error) {
+func (ss *StorageService) PullImage(ctx context.Context, imageName NameTag) (id string, err error) {
 	key := imageName.String()
-	res, err, _ := ss.pullGroup.Do(key, func() (interface{}, error) {
+	res, err, _ := ss.pullGroup.Do(key, func() (any, error) {
 		if err := ss.bm.AssembleHandler(bundle.AssembleConfig{
 			ClosureName:    imageName.Name,
 			ClosureVersion: imageName.Tag,
@@ -156,13 +156,12 @@ func (ss *StorageService) PullImage(ctx context.Context, imageName NameTag) (id 
 	if err != nil {
 		return "", err
 	}
-	return res.(bundle.BundleId), nil
+	return fmt.Sprintf("sha256:%s", res), nil
 }
 
 // DeleteImage deletes a storage image (impacting all its tags)
-func (ss *StorageService) DeleteImage(id bundle.BundleId) error {
-	sid := strings.TrimPrefix(string(id), "sha256:")
-	return ss.bm.DeleteById(bundle.BundleId(sid))
+func (ss *StorageService) DeleteImage(id string) error {
+	return ss.bm.DeleteById(strings.TrimPrefix(id, "sha256:"))
 }
 
 // UntagImage removes a name from the specified image, and if it was

@@ -79,7 +79,7 @@ func (bm *BundleManager) deleteByNameVersion(name string, version string) (err e
 	return
 }
 
-func (bm *BundleManager) DeleteById(id BundleId) (err error) {
+func (bm *BundleManager) DeleteById(id string) (err error) {
 	bm.Lock()
 	defer bm.Unlock()
 	defer bm.saveData()

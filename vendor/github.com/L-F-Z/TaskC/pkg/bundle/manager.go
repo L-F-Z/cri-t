@@ -16,39 +16,18 @@ package bundle
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/L-F-Z/TaskC/internal/utils"
 	"github.com/L-F-Z/TaskC/pkg/prefab"
 	"github.com/L-F-Z/TaskC/pkg/prefabservice"
-	"github.com/google/uuid"
 )
 
-type BundleId string
-
-func (b BundleId) String() string {
-	return string(b)
-}
-
-func ParseBundleId(str string) (BundleId, error) {
-	if strings.Contains(str, " ") {
-		return "", errors.New("failed to parse bundle name")
-	} else {
-		return BundleId(str), nil
-	}
-}
-
-func newBundleId() BundleId {
-	return BundleId(uuid.New().String())
-}
-
 type Bundle struct {
-	Id           BundleId
+	Id           string
 	Prefabs      map[string]string // Prefab Name -> Prefab Specifier
 	PrefabIndexs map[string]int    // Prefab Name -> PrefabPaths Index
 	PrefabPaths  []string
@@ -67,7 +46,7 @@ type BundleManager struct {
 	prefabService *prefabservice.PrefabService
 	bundleDir     string
 	containerDir  string
-	bundles       map[string]map[string]BundleId
+	bundles       map[string]map[string]string // map[name][version]->id
 	listPath      string
 	sync.RWMutex
 }
@@ -97,7 +76,7 @@ func NewBundleManager(workDir string, upstream string) (bm *BundleManager, err e
 	}
 
 	// load exists names
-	bm.bundles = make(map[string]map[string]BundleId)
+	bm.bundles = make(map[string]map[string]string)
 	bm.listPath = filepath.Join(bm.bundleDir, LIST_NAME)
 	if !utils.PathExists(bm.listPath) {
 		return
@@ -127,7 +106,7 @@ func (bm *BundleManager) saveData() (err error) {
 	return
 }
 
-func (bm *BundleManager) GetById(id BundleId) (bundle *Bundle, err error) {
+func (bm *BundleManager) GetById(id string) (bundle *Bundle, err error) {
 	bm.RLock()
 	defer bm.RUnlock()
 	specPath := filepath.Join(bm.bundleDir, string(id), SPEC_NAME)
@@ -168,12 +147,12 @@ func (bm *BundleManager) Get(name string, version string) (bundle *Bundle, err e
 	return
 }
 
-func (bm *BundleManager) AddBundleID(name string, version string, bundleID BundleId) (err error) {
+func (bm *BundleManager) AddBundleID(name string, version string, bundleID string) (err error) {
 	bm.Lock()
 	defer bm.Unlock()
 	_, exists := bm.bundles[name]
 	if !exists {
-		bm.bundles[name] = make(map[string]BundleId)
+		bm.bundles[name] = make(map[string]string)
 	}
 	_, exists = bm.bundles[name][version]
 	if exists {
@@ -220,7 +199,7 @@ func (bm *BundleManager) Exist(name, version string) (exists bool) {
 	return
 }
 
-func (bm *BundleManager) getBundleID(name, version string) (id BundleId, exists bool) {
+func (bm *BundleManager) getBundleID(name, version string) (id string, exists bool) {
 	_, exists = bm.bundles[name]
 	if !exists {
 		return

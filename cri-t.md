@@ -77,4 +77,6 @@ kubeadm reset --force
 sudo systemctl stop kubelet
 sudo systemctl disable kubelet
 taskc d -A
+sudo netstat -tulnp | grep 6443
+sudo kill -9 <PID>
 ```

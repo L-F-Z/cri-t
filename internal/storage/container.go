@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"github.com/L-F-Z/TaskC/pkg/bundle"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -72,7 +71,7 @@ type runtimeContainerMetadataTemplate struct {
 	// The users' input originally used to find imageID; it might evaluate to a different image (or to a different kind of reference!) at any future time.
 	userRequestedImage string // Applicable to both PodSandboxes and Containers
 	// The ID of the image that was used to instantiate the container.
-	imageID bundle.BundleId // Applicable to both PodSandboxes and Containers. Should refer to an image which existed just now (but that can change at any time).
+	imageID string // Applicable to both PodSandboxes and Containers. Should refer to an image which existed just now (but that can change at any time).
 	// The container's name, which for an infrastructure container is usually PodName + "-infra".
 	containerName string // Applicable to both PodSandboxes and Containers, mandatory
 	// The name as originally specified in PodSandbox or Container CRI metadata.

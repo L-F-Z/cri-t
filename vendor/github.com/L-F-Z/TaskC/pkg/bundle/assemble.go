@@ -24,17 +24,14 @@ import (
 	"github.com/L-F-Z/TaskC/pkg/bundle/pubgrub"
 	"github.com/L-F-Z/TaskC/pkg/dcontext"
 	"github.com/L-F-Z/TaskC/pkg/prefab"
+	"github.com/google/uuid"
 )
 
 // assemble the blueprint into a given bundle
 // blueprintPath must be an absoulute path
 func (bm *BundleManager) Assemble(blueprint prefab.Blueprint, basePath string, dctx *dcontext.DeployContext) (err error) {
-	bundleId := newBundleId()
-	if err != nil {
-		err = fmt.Errorf("unable to create a new bundle ID: [%v]", err)
-		return
-	}
-	workDir := filepath.Join(bm.bundleDir, string(bundleId))
+	bundleId := uuid.New().String()
+	workDir := filepath.Join(bm.bundleDir, bundleId)
 	err = os.MkdirAll(workDir, 0700)
 	if err != nil {
 		return fmt.Errorf("failed to create work directory: [%v]", err)
