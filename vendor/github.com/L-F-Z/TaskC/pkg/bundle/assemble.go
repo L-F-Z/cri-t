@@ -17,6 +17,7 @@ package bundle
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"slices"
@@ -26,6 +27,29 @@ import (
 	"github.com/L-F-Z/TaskC/pkg/prefab"
 	"github.com/google/uuid"
 )
+
+var apps map[string]AppEntries
+
+type AppEntries struct {
+	TaskC   Entry   `json:"taskc"`
+	Prefabs []Entry `json:"prefabs"`
+}
+
+type Entry struct {
+	PrefabID    string `json:"prefabID"`
+	BlueprintID string `json:"blueprintID"`
+	PrefabSize  uint64 `json:"prefabSize"`
+}
+
+func init() {
+	data, err := os.ReadFile("apps.json")
+	if err != nil {
+		log.Fatalf("Failed to read merged.json: %v", err)
+	}
+	if err := json.Unmarshal(data, &apps); err != nil {
+		log.Fatalf("Failed to parse merged.json: %v", err)
+	}
+}
 
 // assemble the blueprint into a given bundle
 // blueprintPath must be an absoulute path
@@ -51,31 +75,44 @@ func (bm *BundleManager) Assemble(blueprint prefab.Blueprint, basePath string, d
 		Blueprint:   &blueprint,
 	}
 
-	nonLocal := FilterNonLocal(blueprint.Depend)
-	// fmt.Printf("\rAnalyzing %-40.40s", fmt.Sprintf("%s (%s)", blueprint.Name, blueprint.Version))
-	result, dctx, err := pubgrub.Solve(bm.prefabService, blueprint.Type, blueprint.Name, blueprint.Version, nonLocal, dctx)
-	if err != nil {
-		return fmt.Errorf("failed to solve version dependencies: [%v]", err)
-	}
 	dependency := make(map[string][]string)
 	prefabPaths := make(map[string]string)
-	for pkgName := range result {
-		pkgInfo := result[pkgName]
-		bp, prefabPath, err := bm.prefabService.RequestPrefabBlueprint(pkgInfo.BlueprintID, pkgInfo.PrefabID)
-		if err != nil {
-			return fmt.Errorf("failed to request %v prefab and blueprint: [%v]", pkgName, err)
+	nonLocal := FilterNonLocal(blueprint.Depend)
+	app, isFixed := apps[blueprint.Name]
+	if isFixed {
+		for _, pkgInfo := range app.Prefabs {
+			bp, prefabPath, err := bm.prefabService.RequestPrefabBlueprint(pkgInfo.BlueprintID, pkgInfo.PrefabID)
+			if err != nil {
+				return fmt.Errorf("failed to request %v prefab and blueprint: [%v]", pkgInfo.PrefabID, err)
+			}
+			bundle.PrefabIDs = append(bundle.PrefabIDs, pkgInfo.PrefabID)
+			bundle.PrefabPaths = append(bundle.PrefabPaths, prefabPath)
+			mergeBlueprint(bp, &blueprint)
 		}
-		prefabPaths[pkgName] = prefabPath
-		bundle.PrefabIDs = append(bundle.PrefabIDs, pkgInfo.PrefabID)
-		dependency[pkgName] = pkgInfo.Depends
-		mergeBlueprint(bp, &blueprint)
-	}
-
-	// sort prefabPaths
-	for _, alternatives := range nonLocal {
-		for _, cand := range alternatives {
-			pkgName := pubgrub.GenKey(cand.SpecType, cand.Name)
-			addPath(pkgName, bundle, dependency, prefabPaths)
+	} else {
+		// fmt.Printf("\rAnalyzing %-40.40s", fmt.Sprintf("%s (%s)", blueprint.Name, blueprint.Version))
+		var result map[string]pubgrub.SolvedItem
+		result, dctx, err = pubgrub.Solve(bm.prefabService, blueprint.Type, blueprint.Name, blueprint.Version, nonLocal, dctx)
+		if err != nil {
+			return fmt.Errorf("failed to solve version dependencies: [%v]", err)
+		}
+		for pkgName := range result {
+			pkgInfo := result[pkgName]
+			bp, prefabPath, err := bm.prefabService.RequestPrefabBlueprint(pkgInfo.BlueprintID, pkgInfo.PrefabID)
+			if err != nil {
+				return fmt.Errorf("failed to request %v prefab and blueprint: [%v]", pkgName, err)
+			}
+			prefabPaths[pkgName] = prefabPath
+			bundle.PrefabIDs = append(bundle.PrefabIDs, pkgInfo.PrefabID)
+			dependency[pkgName] = pkgInfo.Depends
+			mergeBlueprint(bp, &blueprint)
+		}
+		// sort prefabPaths
+		for _, alternatives := range nonLocal {
+			for _, cand := range alternatives {
+				pkgName := pubgrub.GenKey(cand.SpecType, cand.Name)
+				addPath(pkgName, bundle, dependency, prefabPaths)
+			}
 		}
 	}
 
